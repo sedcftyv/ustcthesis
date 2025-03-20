@@ -1,6 +1,7 @@
 main.pdf
 ustcthesis-doc.pdf
 *.hd
+*.pdf
 
 ## test files:
 build/

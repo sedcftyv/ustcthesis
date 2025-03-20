@@ -2,7 +2,7 @@
 % !TeX program = xelatex
 % !TeX spellcheck = en_US
 
-\documentclass[degree=doctor]{ustcthesis}
+\documentclass[degree=master, degree-type=professional, output = electronic ]{ustcthesis}
 % degree      = doctor | master | bachelor
 % degree-type = academic | professional
 % language    = chinese | english
@@ -18,7 +18,7 @@
 \copyrightpage
 
 \frontmatter
-\input{chapters/innovations.tex}  % 博士学位论文的创新性说明
+%\input{chapters/innovations.tex}  % 博士学位论文的创新性说明
 \input{chapters/abstract.tex}
 \tableofcontents
 % \listoffigures
@@ -27,6 +27,12 @@
 % \input{chapters/notation.tex}
 
 \mainmatter
+\input{chapters/1_introduction.tex}
+\input{chapters/2_relatedwork.tex}
+\input{chapters/3_DTBC.tex}
+\input{chapters/4_MoP.tex}
+\input{chapters/5_conclusion.tex}
+
 \input{chapters/intro.tex}
 \input{chapters/floats.tex}
 \input{chapters/math.tex}
