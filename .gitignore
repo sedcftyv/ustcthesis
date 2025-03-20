@@ -2,6 +2,7 @@ main.pdf
 ustcthesis-doc.pdf
 *.hd
 *.pdf
+*.png
 
 ## test files:
 build/
