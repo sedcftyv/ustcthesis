@@ -14,21 +14,366 @@
 可以根据编码误差来选择最佳编码配置。
 
 \section{问题描述}
+\label{问题描述}
+
 本章提出的模型旨在实现可微的DXT格式编解码器。
-首先将压缩前的原始纹理定义为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
+将压缩前的原始纹理定义为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
+压缩后的原始纹理定义为$\mathbf{T}^*\in \mathbb{R}^{w\times h\times c}$，
 其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。
 DXT格式编解码器的框架整体上可以使用如下形式表示：
-
- ，并提供给上游模块。因此训练时的整体模型为
 \begin{equation}
-\mathbf{T}^*=\text{M}(\mathbf{T}',\theta)=\text{M}(\text{DBC}(\mathbf{T}),\theta)
+    \mathbf{T}^*=\text{Decoder}(\text{Encoder}(\mathbf{T}'))
 \end{equation}
-DBC 框架的输入是一批 4x4 的纹理块，接着我们计算各种编码配置的压缩纹理块。压缩配置可以划分成非分区的配置（Mode4-Mode6）和分区配置（Mode7）。Mode7 总共有 64 种分区配置，如果每种分区模式都计算，将带来显著的计算开销。为了解决这个问题，我们提出了 MoP 模块，其在每次 epoch 中仅计算少数几个分区配置。在压缩配置选择器中，我们根据各编码配置的压缩纹理块与输入纹理块之间的误差，随机选出压缩纹理块，并传递给上游模块。
+其中Encoder表示可微编码器，Decoder表示可微解码器。可微编码器首先将纹理分为4x4大小的纹理块，
+然后对于每个纹理块，使用各种编码配置进行编码，根据编码误差选择出最佳的编码模式，最后经过解码器解码得到解压缩的纹理。
+可微的编解码器使用时会结合到其他压缩方法中进行端到端联合优化，优化完成后，
+对$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$使用标准DXT格式编码器即可得到较好的压缩格式数据。
 
-在训练过程中，压缩后的参数纹理实际上仍以浮点形式存在。在端到端训练完成后，我们将这些压缩后的神经特征转换为 BC7 格式，使用标准的 BC7 编解码器 bc7e 进行输出。
+DXT格式共包含BC1至BC7共7种格式，这些格式都将纹理划分为
+多个4x4的块进行压缩存储。由于DXT格式的共同特点是压缩时存储颜色端点与权重，解压时根据权重对颜色端点进行线性插值。
+因此在编码过程中，对于BC1至BC7这7种格式，在不考虑量化的情况下，需要解决的共同问题 $P_{m,n}$ 是：给定输入纹素组 $\mathbf{C}\in\mathbb{R}^{m\times n}$，
+找到适合表达该组纹素的线段端点 $\mathbf{e}_0\in\mathbb{R}^n$ 和 $\mathbf{e}_1\in\mathbb{R}^n$ 
+以及插值系数 $\mathbf{t}\in\mathbb{R}^m$。其中 $m$ 表示纹素个数，$n$ 表示纹素通道数。
+
+对于 BC1 和 BC4，编码问题分别为 $P_{16,3}$ 和 $P_{16,1}$。
+BC3 的编码问题可以拆分为 $P_{16,3}$ 和 $P_{16,1}$。
+而 BC2 可以看成是 BC3 的特化形式，
+即 alpha 通道的线段端点是 $0$ 和 $1$。
+BC5 相当于两个通道分别使用BC4格式。BC6 包含单分区（$P_{16,3}$）和双分区配置，
+而双分区配置编码问题可以拆分为 $P_{m_1,3}$ 和 $P_{m_2,3}$，
+其中 $m_1$ 和 $m_2$ 是两个分区的纹素个数。
+
+BC7 包含模式0至模式7共8种编码模式，其中模式0到模式3用于压缩 3 通道纹理，
+而模式4到模式7用于压缩 4 通道纹理。模式1和模式3使用了双分区配置，
+其编码问题都同于BC6的双分区配置；模式0和模式2是三分区配置，
+编码问题可以拆分为 $P_{m_1,3}$、$P_{m_2,3}$ 和 $P_{m_3,3}$，
+其中 $m_1$、$m_2$ 和 $m_3$ 是三个分区的纹素个数；模式4和模式5包含 4 种旋转配置，
+每个旋转配置的编码问题同于 BC3；模式6的编码问题为 $P_{16,4}$；
+模式7是双分区配置，其编码问题可以拆分为  $P_{m_1,4}$ 和 $P_{m_2,4}$。
+
+BC7中用于压缩RGBA纹理，且包含了分区和旋转的模式4至模式7可以看作DXT格式中最复杂的格式。
+不考虑量化的情况下，其他编码格式相当于BC7中模式4至模式7的子集，
+可微BC7格式的RGBA编解码器可以较为容易地推广到其他DXT格式中。
+因此本文主要关注BC7格式的RGBA编解码器。
+
 \section{模型框架}
-\subsection{可微编码器}
-\subsection{可微解码器}
+
+\subsection{整体框架}
+
+整体框架如图\ref{fig:DBC_overview}所示，
+图中展示了可微编解码器架构（DBC），并以神经纹理压缩为例，
+展示了可微编解码器与其他压缩方法结合的管线。
+其中最左边的输入纹理为神经纹理压缩中的纹理形式的特征网格，
+经过可微编码器后通过不同编码配置进行了编码，之后每种编码经过
+可微解码器进行解码，然后使用配置选择器根据编码误差选择最佳编码配置，
+并输出对应的编解码结果，之后使用神经网络对可微编解码后的特征网格
+进行解码，得到最终的解码纹理。
+
+需要注意的是，由于本文所提出的可微编解码器本身没有需要优化的参数，
+因此结合到其他压缩方法并进行联合优化时，损失函数仅为整体误差。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/DBC_overview_v2.pdf}
+    \caption{整体框架}
+    \label{fig:DBC_overview}
+\end{figure}
+
+
+\subsection{可微编解码器}
+
+在可微编码中，\ref{问题描述}中的公共问题 $P_{m,n}$ 可以通过主成分分析（PCA）来解决。
+首先，计算中心化的纹素组 $\mathbf{C}_{\text{center}}\in\mathbb{R}^{m\times n}$：
+
+\begin{equation}
+\mathbf{C}_{\text{center}}=\mathbf{C}-\text{mean}(\mathbf{C})
+\end{equation}
+然后，对 $\mathbf{C}_{\text{center}}$ 进行奇异值分解（SVD）：
+\begin{equation}
+\mathbf{C}_{\text{center}}=\mathbf{U}\text{diag}(\mathbf{s})\mathbf{V}^T
+\end{equation}
+其中，$\mathbf{U}\in \mathbb{R}^{m \times m}$，$\mathbf{s}\in \mathbb{R}^{n}$，$\mathbf{V}\in \mathbb{R}^{n\times n}$，$\text{diag}(\mathbf{s})\in\mathbb{R}^{n\times n}$ 表示以 $\mathbf{s}$ 为对角元素的对角矩阵。
+选择 $\mathbf{V}$ 中最大奇异值对应的奇异向量 $\mathbf{v}'\in \mathbb{R}^{n}$ 作为主方向。
+接着，将中心化的纹素组 $\mathbf{C}_\text{center}$ 投影到主方向 $\mathbf{v}'$ 上，
+得到权重 $\mathbf{t}'\in\mathbb{R}^{m}$：
+\begin{equation}
+\mathbf{t}'=\mathbf{C}_{\text{center}}\cdot\mathbf{v}'
+\end{equation}
+从而可以得到两个颜色端点 $\mathbf{e}'_0\in\mathbb{R}^n$ 和 $\mathbf{e}'_1\in\mathbb{R}^n$：
+\begin{equation}
+\mathbf{e}'_0=\text{mean}(\mathbf{C})+\text{min}(\mathbf{t}')\mathbf{v}\\
+\mathbf{e}'_1=\text{mean}(\mathbf{C})+\text{max}(\mathbf{t}')\mathbf{v}
+\end{equation}
+由于端点的数值范围应在 $[0,1]$ 之间，因此需要对端点进行 clamp 操作。
+为了保证训练时梯度在端点超出有效数值范围时非零，使用 $\text{leakyclamp}$，从而得到近似处于有效范围的端点 $\mathbf{e}_0$ 和 $\mathbf{e}_1$：
+\begin{equation}
+\mathbf{e}_0=\text{leakyclamp}(\mathbf{e}'_0,0,1)\\
+\mathbf{e}_1=\text{leakyclamp}(\mathbf{e}'_1,0,1)
+\end{equation}
+其中（$\epsilon=0.01$）
+\begin{equation}
+\text{leakyclamp}(x,a,b)=\text{clamp}(x,a,b)\\
+                        +\epsilon[(\max(x,b)-b)+(\min(x,a)-a)]
+\end{equation}
+接着可以重新计算主方向 $\mathbf{v}\in\mathbb{R}^n$ 并重新投影得到权重 $\mathbf{t}''\in\mathbb{R}^m$：
+\begin{equation}
+\mathbf{v}=\frac{\mathbf{e}_1-\mathbf{e}_0}{\|\mathbf{e}_1-\mathbf{e}_0\|}\\
+\mathbf{t}''=\frac{(\mathbf{C}-\mathbf{e}_0)\cdot\mathbf{v}}{\|\mathbf{e}_1-\mathbf{e}_0\|}
+\end{equation}
+同样需要用 $\text{leakyclamp}$ 使权重 $\mathbf{t}''$ 处于有效数值范围 $[0,1]$ 内，即
+\begin{equation}
+\mathbf{t}=\text{leakyclamp}(\mathbf{t}'',0,1)
+\end{equation}
+解码器进行插值得到解码的纹素组 $\mathbf{C}'\in\mathbb{R}^{m\times n}$ 为
+\begin{equation}
+\mathbf{C}'=\mathbf{e}_0(1-\mathbf{t})+\mathbf{e}_1\mathbf{t}
+\end{equation}
+以上计算都是可微的，本文使用PyTorch作为自动微分工具进行实现。
+
+\subsection{配置选择器}
+
+设所有配置的集合为 $\mathcal{I}$，纹理的宽度、高度和通道数分别表示为$w$、$h$、$c$，
+输入纹理为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
+针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的纹理为 $\mathbf{T}^*_i\in \mathbb{R}^{w\times h\times c}$。
+首先定义压缩误差 $L_i$ 为
+\begin{equation}
+    L_i=\|\mathbf{T'}-\mathbf{T^*_i}\|_F^2
+\end{equation}
+配置选择器应该选择使得压缩误差$L_i$最小的编码配置对应的编解码后纹理$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$：
+\begin{equation}
+    \mathbf{T}=\mathop{\arg\min}\limits_{\mathbf{T}^*_i} L_i
+\end{equation}
+理论上$\mathop{\arg\min}$操作是不可微的，本文使用了类似神经网络量化中的直通估计器（Straight Through Estimator，STE）\cite{bengio2013estimating}
+使梯度跳过了$\mathop{\arg\min}$函数，即前向计算时使用$\mathop{\arg\min}$，梯度反向传播时跳过$\mathop{\arg\min}$并且仅让梯度传播至使得压缩误差最小的$\mathbf{T}^*_i$上：
+\begin{equation}
+    \nabla_{\mathbf{T}^*_i}{\mathop{\arg\min}\limits_{\mathbf{T}^*_i} L_i} =\left\{\begin{matrix}
+        1,& i=\mathop{\arg\min}\limits_{i} L_i
+        \\0,& i\ne \mathop{\arg\min}\limits_{i} L_i
+        \end{matrix}\right.
+\end{equation}
+\begin{equation}
+    \nabla_{\mathbf{T}'}{\mathop{\arg\min}\limits_{\mathbf{T}^*_i} L_i}=0
+\end{equation}
+
 \section{实验设计与分析}
+
+本文使用Pytorch实现了可微BC7 RGBA模式的编解码器以及可微BC6编解码器，
+并在神经纹理压缩、基于移动基分解的光照数据压缩、基于RGBM编码的HDR纹理压缩
+三个应用场景上进行实验。
+其中神经纹理压缩实验使用可微BC6编解码器，其余两个实验使用可微BC7 RGBA模式编解码器。
+可微BC6与BC7编解码器都通过Pytorch实现，以支持自动微分。
+
+\subsection{神经纹理压缩实验}
+
+\subsubsection{实验设置}
+
+\paragraph{实验数据集}
+
+在神经纹理模型的实验中，我们使用了来自polyhaven.com\cite{PolyHaven}的 12 个公开的材质纹理集，
+每个纹理集包含 8 个通道，由 3 张纹理组成：3通道的漫反射问题、2通道的法线纹理 和 3通道的ARM纹理 (环境光遮蔽、粗糙度、金属度)，
+分辨率均为2048×2048（2K）。
+
+\paragraph{评估指标}
+
+纹理压缩任务常用的评估指标是峰值信噪比（Peak Signal-to-Noise Ratio，PSNR）、
+结构相似性（Structural SIMilarity， SSIM）\cite{wang2004image}，
+以及FLIP\cite{andersson2020flip}。
+
+峰值信噪比（Peak Signal-to-Noise Ratio, PSNR）是图像和视频处理领域一种常用的客观质量评价指标。
+它用于衡量经过压缩或重建后的图像与原始图像之间的差异，PSNR 值越高，
+说明失真越小，图像质量越好。
+
+PSNR 的计算基于均方误差（Mean Squared Error, MSE），其定义如下：
+\begin{equation}
+\text{MSE} = \frac{1}{MN} \sum_{i=0}^{M-1} \sum_{j=0}^{N-1} \left[ I(i,j) - K(i,j) \right]^2
+\end{equation}
+其中，$M$ 和 $N$ 分别为图像的宽度和高度，$I(i,j)$ 和 $K(i,j)$ 分别表示原始图像和经过处理后的图像在像素 $(i,j)$ 处的灰度值。
+
+基于 MSE，PSNR 的计算公式如下：
+\begin{equation}
+    \text{PSNR} = 10 \cdot \log_{10} \left( \frac{MAX^2}{\text{MSE}} \right)
+\end{equation}
+其中，$MAX$ 表示像素的最大可能值，例如 8-bit 图像中 $MAX = 255$。
+
+一般而言，PSNR 数值范围通常在 30–50 dB 之间，具体含义如下：
+\begin{itemize}
+    \item PSNR $\geq 40$ dB：高质量，几乎无损，人眼难以察觉图像差异；
+    \item 30 dB $\leq$ PSNR $<$ 40 dB：质量良好，可能存在轻微失真，但视觉上仍可接受；
+    \item PSNR $<$ 30$ dB$：图像质量较差，失真较明显。
+\end{itemize}
+
+虽然 PSNR 计算简单且易于理解，但它仅基于像素误差衡量图像质量，而未考虑人眼视觉系统（HVS）的感知特性。例如，两幅图像的 PSNR 可能相同，但主观视觉效果可能存在明显差异。
+
+结构相似性指数（Structural Similarity Index, SSIM）是一种衡量图像质量的客观指标，旨在模拟人类视觉系统（Human Visual System, HVS）对图像质量的感知。与峰值信噪比（PSNR）不同，SSIM 不仅关注像素间的数值差异，还考虑了图像的结构信息，从而提供更符合人眼感知的质量评估。
+
+SSIM 通过亮度（Luminance）、对比度（Contrast）和结构（Structure）三个分量计算图像相似度，其数学定义如下：
+\begin{equation}
+\text{SSIM}(x, y) = [l(x, y)]^\alpha \cdot [c(x, y)]^\beta \cdot [s(x, y)]^\gamma
+\end{equation}
+其中：
+
+$l(x, y)$ 为亮度比较函数：
+\begin{equation}
+l(x, y) = \frac{2\mu_x\mu_y + C_1}{\mu_x^2 + \mu_y^2 + C_1}
+\end{equation}
+其中 $\mu_x$ 和 $\mu_y$ 分别为图像 $x$ 和 $y$ 的均值，$C_1$ 是稳定常数。
+
+$c(x, y)$ 为对比度比较函数：
+\begin{equation}
+c(x, y) = \frac{2\sigma_x\sigma_y + C_2}{\sigma_x^2 + \sigma_y^2 + C_2}
+\end{equation}
+其中 $\sigma_x$ 和 $\sigma_y$ 分别为图像 $x$ 和 $y$ 的标准差，$C_2$ 是稳定常数。
+
+$s(x, y)$ 为结构相似性函数：
+\begin{equation}
+s(x, y) = \frac{\sigma_{xy} + C_3}{\sigma_x \sigma_y + C_3}
+\end{equation}
+其中 $\sigma_{xy}$ 为图像 $x$ 和 $y$ 之间的协方差，$C_3$ 是稳定常数。
+
+
+通常，SSIM 取 $\alpha = \beta = \gamma = 1$，则其简化形式如下：
+\begin{equation}
+    \text{SSIM}(x, y) = \frac{(2\mu_x\mu_y + C_1)(2\sigma_{xy} + C_2)}{(\mu_x^2 + \mu_y^2 + C_1)(\sigma_x^2 + \sigma_y^2 + C_2)}
+\end{equation}
+
+SSIM 的取值范围为 $[-1,1]$，其中：
+\begin{itemize}
+    \item SSIM = 1 表示两幅图像完全相同；
+    \item SSIM 接近 1 表示两幅图像高度相似；
+    \item SSIM 接近 0 表示两幅图像存在较大差异；
+    \item SSIM 低于 0 可能表示强烈的结构失真。
+\end{itemize}
+
+相比于 PSNR，SSIM 更符合人类视觉系统的感知特点，能够更准确地反映图像质量。
+然而，SSIM 仍然存在一定局限性，例如对局部亮度变化较敏感。
+
+FLIP是一种由 NVIDIA 提出的基于人类感知差异的图像质量评价指标，专用于计算机图形学中的渲染质量评估。
+FLIP计算过程结合了人眼视觉特性和局部特征检测，以评估图像的感知质量差异。
+首先，FLIP 采用对比敏感度函数（Contrast Sensitivity Function, CSF）对输入图像进行空间滤波，
+以模拟人眼对不同空间频率的敏感性，并在感知均匀色彩空间中计算颜色误差，
+以确保色彩差异符合人眼视觉特性。随后，FLIP 通过边缘检测和点状特征检测增强对小尺度结构（如锐利边缘、噪点等）的感知，
+并采用局部对比度分析确保对高频细节的评估更符合视觉系统。
+最终，FLIP 计算颜色误差 $\Delta E_c$ 和特征误差 $\Delta E_f$，并通过非线性组合：
+\begin{equation}
+    \Delta E = (\Delta E_c)^{1 - \Delta E_f}
+\end{equation}
+获得最终的感知误差值。该计算方式确保了特征误差对颜色误差的影响，
+增强了对关键视觉区域（如边缘、纹理和亮度变化）的质量评估。
+
+FLIP 的取值范围为 $[0,1]$，其中：
+\begin{itemize}
+    \item FLIP 值接近 0：图像几乎无损，人眼难以察觉差异。
+    \item FLIP 值较高：表明图像存在可感知的质量损失，可能影响视觉体验。
+    \item 局部高值区域：对应于人眼敏感的细节，如 **边缘、噪点、光照变化等**。
+\end{itemize}
+
+\paragraph{基准模型}
+
+为了验证本章模型的有效性，不使用可微编解码器（BC）、固定配置的可微BC6编解码器（Fix\_DTBC）
+作为两个基准模型，与使用带配置选择器的可微BC6编解码器（DTBC）进行对比。
+其中固定配置的可微编解码器类似于Weinreich等\cite{weinreich2024real}提出的仅解码器模型。
+
+\paragraph{实现细节}
+
+神经网络使用与Weinreich等\cite{weinreich2024real}中的BCf-0.5K相同的配置，
+即4个3通道的特征网格，每个特征网格大小分别为512x512、256x256、128x128、64x64。
+神经网络使用两层全连接结构，隐藏层通道数为16，输入通道数为12，输出通道数为8（纹理集中一组纹理的通道数之和）。
+损失函数为神经网络重建的纹理与真实纹理之间的均方误差。
+进行实验前首先将特征网格初始化为-1到1之间的均匀分布，神经网络权重和偏置项使用默认初始化。
+将每个材质的纹理集中的一组纹理拼接成8通道的张量作为真实数据，
+将2048x2048大小的整数网格作为采样的UV坐标，
+训练和推理时一个epoch内，根据2048x2048大小的整数网格采样特征网格，并通过神经网络解码出原始的2K纹理。
+
+将学习率设为0.01，使用Adam优化器先进行10000个epoch的预训练，训练过程不使用任何压缩方法。
+预训练完成后，保存特征网格与网络权重参数，对于两个基准模型与本文所提出的模型分别进行实验。
+
+对于不使用可微编解码器（BC），对特征网格直接使用标准BC6编码器进行编解码，然后进行网络推理解码原始纹理并计算误差作为结果。
+
+对于固定配置的可微BC6编解码器（Fix\_DTBC），保持学习率为0.01不变，首先对特征网格运行一次可微BC6编解码器确定每个块的编码配置，
+然后固定编码配置，将可微BC6编解码器加入到神经纹理压缩模型中，进行联合优化。
+
+对于带配置选择器的可微BC6编解码器（DTBC），保持学习率为0.01不变，直接将可微BC6编解码器加入到神经纹理压缩模型中，进行联合优化。
+加入了可微BC6编解码器的优化过程中，学习率根据损失调控，具体地，当连续 40 个 epoch 没有新的历史最低损失产生时，将学习率乘上衰减系数 0.9，每隔 50 个 epoch 将纹理使用标准BC6编解码器进行一次编解码，并计算真实损失，防止发生过拟合。当连续 5 次（对应 250 个 epoch）没有新的历史最低真实损失产生时，停止训练。
+优化完成后记录历史最低的真实损失作为实验结果。
+
+\subsubsection{实验结果与分析}
+
+12个材质的纹理集上进行的实验结果如图\ref{fig:nm_BC6}所示，对于每个材质，
+不使用可微BC6编解码器（BC）都取得了最差的结果，
+而固定配置的可微BC6编解码器（Fix\_DTBC）取得了更好的结果,
+带配置选择器的可微BC6编解码器(DTBC)取得了最好的结果。
+加入可微BC6编解码器并进行联合优化有效降低了BC6对神经纹理压缩带来的质量损失，
+同时带配置选择器的实验结果最佳，证明了编解码器框架相对与仅解码架构的优势。
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/nm_BC6.png}
+    \caption{12个材质的纹理集上进行的实验结果}
+    \label{fig:nm_BC6}
+\end{figure}
+
+
+\subsection{基于移动基分解的光照数据压缩实验}
+
+\subsubsection{实验设置}
+
+\paragraph{实验数据集}
+
+在基于移动基分解的光照数据压缩实验中，在康奈尔盒场景与4个大型开放场景中进行了测试。
+Cornell Box 场景中进行了二阶球谐表示的辐照度体积实验，4个大型开放场景中进行了一阶球谐表示的辐照度体积实验。
+
+\paragraph{评估指标}
+
+使用结构相似度（SSIM）与FLIP作为评价指标。
+
+\paragraph{基准模型}
+
+为了验证本章模型的有效性，不使用可微编解码器（BC）、固定配置的可微BC7编解码器（Fix\_DTBC）
+作为两个基准模型，与使用带配置选择器的可微BC7编解码器（DTBC）进行对比。
+
+\paragraph{实现细节}
+
+实验前首先对场景里的球谐函数进行PCA，从而初始化系数与基向量。
+
+对于不使用可微编解码器（BC），对特征网格直接使用标准BC7编码器进行编解码，
+然后进行空间滤波解码原始球谐函数并计算误差作为结果。
+
+对于固定配置的可微BC7编解码器（Fix\_DTBC），初始化学习率为0.1，
+首先对特征网格运行一次可微BC7编解码器确定每个块的编码配置，
+然后固定编码配置，将可微BC7编解码器加入到MBD模型中，进行联合优化。
+
+对于带配置选择器的可微BC7编解码器（DTBC），初始化学习率为0.1，
+直接将可微BC7编解码器加入到MBD模型中，进行联合优化。
+
+在可微BC7编解码器的优化过程中，学习率根据损失调控，具体地，
+当连续 40 个 epoch 没有新的历史最低损失产生时，将学习率乘上衰减系数 0.9，
+每隔 50 个 epoch 将纹理使用标准BC6编解码器进行一次编解码，并计算真实损失，
+防止发生过拟合。当连续 5 次（对应 250 个 epoch）没有新的历史最低真实损失产生时，停止训练。
+优化完成后记录历史最低的真实损失作为实验结果。
+
+\subsubsection{实验结果与分析}
+
+实验结果如图\ref{fig:MBD_BC7}所示，带配置选择器的可微BC7编解码器（DTBC）
+在所有场景中相比不使用可微编解码器（BC）都取得了更好的结果，证明了
+可微编解码器的有效性。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/MBD_BC7.png}
+    \caption{MBD模型的实验结果（缺固定配置实验Fix\_DTBC）}
+    \label{fig:MBD_BC7}
+\end{figure}
+
+\subsection{基于RGBM编码的HDR纹理压缩实验}
+
+\section{本章小结}
+
+本章提出了可微DXT格式编解码器模型。在引言部分，提出了将纹理块压缩方法
+直接应用到其他压缩方法上面临的较高质量损失问题，阐述了可微纹理块压缩技术的
+实用性。然后分析了BC1至BC7这7种格式的异同点，分析了将BC7作为DXT格式中最复杂格式
+的原因。接下来提出了模型的整体框架，阐述了可微编解码器与编码配置选择器的数学表达。
+之后本章在3个应用场景中对本文所提出的方法进行测试，并给出了基线比较实验，
+以证明所提出的方法的有效性。
 
 
