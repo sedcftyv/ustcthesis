@@ -1,6 +1,7 @@
 {
     "latex-workshop.intellisense.unimathsymbols.enabled": true,
     "latex-workshop.latex.recipes": [
+
         {
             "name": "latexmk (xelatex)",
             "tools": [
@@ -19,6 +20,7 @@
             "name": "xelatexmk",
             "command": "latexmk",
             "args": [
+                "-shell-escape",
                 "-synctex=1",
                 "-interaction=nonstopmode",
                 "-file-line-error",
@@ -32,6 +34,7 @@
             "name": "lualatexmk",
             "command": "latexmk",
             "args": [
+                "-shell-escape",
                 "-synctex=1",
                 "-interaction=nonstopmode",
                 "-file-line-error",

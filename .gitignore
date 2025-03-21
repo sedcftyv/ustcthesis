@@ -3,6 +3,7 @@ ustcthesis-doc.pdf
 *.hd
 *.pdf
 *.png
+*.pdf_tex
 
 ## test files:
 build/
