@@ -18,11 +18,11 @@
 
 本章提出的模型旨在实现可微的DXT格式编解码器。
 将压缩前的原始纹理定义为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
-压缩后的原始纹理定义为$\mathbf{T}^*\in \mathbb{R}^{w\times h\times c}$，
+压缩后的纹理定义为$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$，
 其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。
 DXT格式编解码器的框架整体上可以使用如下形式表示：
 \begin{equation}
-    \mathbf{T}^*=\text{Decoder}(\text{Encoder}(\mathbf{T}'))
+    \mathbf{T}=\text{Decoder}(\text{Encoder}(\mathbf{T}'))
 \end{equation}
 其中Encoder表示可微编码器，Decoder表示可微解码器。可微编码器首先将纹理分为4x4大小的纹理块，
 然后对于每个纹理块，使用各种编码配置进行编码，根据编码误差选择出最佳的编码模式，最后经过解码器解码得到解压缩的纹理。
@@ -134,26 +134,35 @@ BC7中用于压缩RGBA纹理，且包含了分区和旋转的模式4至模式7�
 
 设所有配置的集合为 $\mathcal{I}$，纹理的宽度、高度和通道数分别表示为$w$、$h$、$c$，
 输入纹理为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
-针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的纹理为 $\mathbf{T}^*_i\in \mathbb{R}^{w\times h\times c}$。
+针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的纹理为 $\mathbf{T}_i\in \mathbb{R}^{w\times h\times c}$。
 首先定义压缩误差 $L_i$ 为
 \begin{equation}
-    L_i=\|\mathbf{T'}-\mathbf{T^*_i}\|_F^2
+    L_i=\|\mathbf{T'}-\mathbf{T_i}\|_F^2
 \end{equation}
-配置选择器应该选择使得压缩误差$L_i$最小的编码配置对应的编解码后纹理$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$：
+配置选择器应该选择使得压缩误差$L_i$最小的编码配置$i^*$：
 \begin{equation}
-    \mathbf{T}=\mathop{\arg\min}\limits_{\mathbf{T}^*_i} L_i
+    i^*=\mathop{\arg\min}\limits_{i} L_i
+\end{equation}
+由于在计算压缩误差之前，已经对每种编码配置都进行了可微编解码，因此配置选择器
+直接将使用了$i^*$进行编解码得到的$\mathbf{T}_{i^*}$作为输出。
+\begin{equation}
+    \mathbf{T}_{i^*}=\mathop{\arg\min}\limits_{\mathbf{T}_i} L_i
 \end{equation}
 理论上$\mathop{\arg\min}$操作是不可微的，本文使用了类似神经网络量化中的直通估计器（Straight Through Estimator，STE）\cite{bengio2013estimating}
-使梯度跳过了$\mathop{\arg\min}$函数，即前向计算时使用$\mathop{\arg\min}$，梯度反向传播时跳过$\mathop{\arg\min}$并且仅让梯度传播至使得压缩误差最小的$\mathbf{T}^*_i$上：
+使梯度跳过了$\mathop{\arg\min}$函数，即前向计算时使用$\mathop{\arg\min}$，梯度反向传播时跳过$\mathop{\arg\min}$并且仅让梯度传播至使得压缩误差最小的$\mathbf{T}_{i^*}$上：
 \begin{equation}
-    \nabla_{\mathbf{T}^*_i}{\mathop{\arg\min}\limits_{\mathbf{T}^*_i} L_i} =\left\{\begin{matrix}
-        1,& i=\mathop{\arg\min}\limits_{i} L_i
-        \\0,& i\ne \mathop{\arg\min}\limits_{i} L_i
+    \nabla_{\mathbf{T}_i}{\mathop{\arg\min}\limits_{\mathbf{T}_i} L_i} =\left\{\begin{matrix}
+        1,& \mathbf{T}_{i}=\mathbf{T}_{i^*}
+        \\0,& \mathbf{T}_{i} \ne \mathbf{T}_{i^*}
         \end{matrix}\right.
 \end{equation}
 \begin{equation}
-    \nabla_{\mathbf{T}'}{\mathop{\arg\min}\limits_{\mathbf{T}^*_i} L_i}=0
+    \nabla_{\mathbf{T}'}{\mathop{\arg\min}\limits_{\mathbf{T}_i} L_i}=0
 \end{equation}
+这种方式的缺点是为了确定最佳的编码配置，在可微编解码过程中需要使用所有的编码配置进行编解码，
+才能计算出每个编码配置对应的压缩误差$L_i$，这产生了比较显著的计算开销，下一章中将针对这一问题进行改进。
+
+
 
 \section{实验设计与分析}
 
