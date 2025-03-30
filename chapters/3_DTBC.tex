@@ -4,11 +4,11 @@
 
 \section{引言}
 
-现有的纹理块压缩方法已经可以对常见纹理进行高质量压缩。
-但对于其他压缩方法产生的纹理形式的中间数据，由于现有方法无法关注到
-其他压缩方法带来的整体误差，因此直接使用现有方法压缩会导致较低的压缩质量。
-其中一个解决思路是根据压缩格式定义，实现可微的编解码器，并将其与其他压缩方法
-结合，进行端到端联合优化，从而提高二次压缩的压缩质量。
+为了进一步节省显存，在神经网络优化结束后，可以对神经特征使用纹理块压缩技术进行压缩。
+但由于现有纹理块压缩工具不支持自动微分，无法与神经网络这类优化方法联合训练，
+因此训练过程无法感知到块压缩带来的影响，最终块压缩会导致整体模型的目标误差显著增加。
+其中一个解决办法是根据压缩格式定义，实现可微的编解码器，并将其与神经网络模型
+结合，进行端到端联合优化，从而降低块压缩对网络模型造成的额外质量损失。
 目前已有基于可微BC6解码器的应用研究，但由于仅解码器框架的局限性，
 只能进行固定配置优化。本章提出了一种新颖的可微纹理块压缩模型，包括DXT格式的编码器与解码器，
 可以根据编码误差来选择最佳编码配置。
@@ -22,12 +22,14 @@
 其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。
 DXT格式编解码器的框架整体上可以使用如下形式表示：
 \begin{equation}
-    \mathbf{T}=\text{Decoder}(\text{Encoder}(\mathbf{T}'))
+    \mathbf{T}=\text{ConfigSelector}(\text{Decoder}(\text{Encoder}(\mathbf{T}')))
 \end{equation}
-其中Encoder表示可微编码器，Decoder表示可微解码器。可微编码器首先将纹理分为4x4大小的纹理块，
-然后对于每个纹理块，使用各种编码配置进行编码，根据编码误差选择出最佳的编码模式，最后经过解码器解码得到解压缩的纹理。
-可微的编解码器使用时会结合到其他压缩方法中进行端到端联合优化，优化完成后，
+其中Encoder表示可微编码器，Decoder表示可微解码器，ConfigSelector表示编码配置选择器。可微编码器首先将纹理分为4x4大小的纹理块，
+然后对于每个纹理块，使用不同的编码配置进行编码，每个编码配置经过可微解码器解码得到对应的纹理，
+最后编码配置选择器选择编码误差最小的结果作为输出。
+可微的编解码器使用时会结合到其他模型中进行端到端联合优化，优化完成后，
 对$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$使用标准DXT格式编码器即可得到较好的压缩格式数据。
+由于量化过程不可微，因此本章提出的模型忽略了量化过程。
 
 DXT格式共包含BC1至BC7共7种格式，这些格式都将纹理划分为
 多个4x4的块进行压缩存储。由于DXT格式的共同特点是压缩时存储颜色端点与权重，解压时根据权重对颜色端点进行线性插值。
@@ -39,7 +41,7 @@ DXT格式共包含BC1至BC7共7种格式，这些格式都将纹理划分为
 BC3 的编码问题可以拆分为 $P_{16,3}$ 和 $P_{16,1}$。
 而 BC2 可以看成是 BC3 的特化形式，
 即 alpha 通道的线段端点是 $0$ 和 $1$。
-BC5 相当于两个通道分别使用BC4格式。BC6 包含单分区（$P_{16,3}$）和双分区配置，
+BC5 相当于两个通道分别使用BC4格式。BC6 包含单分区($P_{16,3}$)和双分区配置，
 而双分区配置编码问题可以拆分为 $P_{m_1,3}$ 和 $P_{m_2,3}$，
 其中 $m_1$ 和 $m_2$ 是两个分区的纹素个数。
 
@@ -61,7 +63,7 @@ BC7中用于压缩RGBA纹理，且包含了分区和旋转的模式4至模式7�
 \subsection{整体框架}
 
 整体框架如图\ref{fig:DBC_overview}所示，
-图中展示了可微编解码器架构（DBC），并以神经纹理压缩为例，
+图中展示了可微编解码器架构(DBC)，并以神经纹理压缩为例，
 展示了可微编解码器与其他压缩方法结合的管线。
 其中最左边的输入纹理为神经纹理压缩中的纹理形式的特征网格，
 经过可微编码器后通过不同编码配置进行了编码，之后每种编码经过
@@ -128,36 +130,44 @@ BC7中用于压缩RGBA纹理，且包含了分区和旋转的模式4至模式7�
 \begin{equation}
 \mathbf{C}'=\mathbf{e}_0(1-\mathbf{t})+\mathbf{e}_1\mathbf{t}
 \end{equation}
-以上计算都是可微的，本文使用PyTorch作为自动微分工具进行实现。
+
+解决了公共问题$P_{m,n}$后，每种DXT格式的编解码过程可以看作一系列
+$P_{m,n}$的组合，例如BC7中模式7具有的64种双分区对应64个$P_{m_1,n}$和
+$P_{m_2,n}$问题。
+
+接下来需要解决编码配置选择的问题，例如对于BC7中模式7具有的64种双分区，
+需要从中选择压缩误差最小的一种分区方案。
 
 \subsection{配置选择器}
 
-设所有配置的集合为 $\mathcal{I}$，纹理的宽度、高度和通道数分别表示为$w$、$h$、$c$，
-输入纹理为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
-针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的纹理为 $\mathbf{T}_i\in \mathbb{R}^{w\times h\times c}$。
-首先定义压缩误差 $L_i$ 为
+设输入纹理块 $\mathbf{B}\in\mathbb{R}^{b\times n}$，其中 $b$ 是一个纹理块中的纹素个数。
+所有配置的集合为 $\mathcal{I}$，针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的压缩纹理块为 $\mathbf{B}'_i\in\mathbb{R}^{b\times n}$。
+定义编码配置$i$对应的压缩误差 $L_i$ 为
 \begin{equation}
-    L_i=\|\mathbf{T'}-\mathbf{T_i}\|_F^2
+L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
 \end{equation}
-配置选择器应该选择使得压缩误差$L_i$最小的编码配置$i^*$：
+
+配置选择器的功能是对每个4x4纹理块$\mathbf{B}$，在不同编码配置中选择最佳配置，
+即应该选择使得压缩误差$L_i$最小的编码配置$i^*$：
 \begin{equation}
     i^*=\mathop{\arg\min}\limits_{i} L_i
 \end{equation}
-由于在计算压缩误差之前，已经对每种编码配置都进行了可微编解码，因此配置选择器
-直接将使用了$i^*$进行编解码得到的$\mathbf{T}_{i^*}$作为输出。
+由于在计算压缩误差之前，已经对每种编码配置都进行了可微编解码，配置选择器可以
+直接将使用了$i^*$进行编解码得到的$\mathbf{B}'_{i^*}$作为输出。
 \begin{equation}
-    \mathbf{T}_{i^*}=\mathop{\arg\min}\limits_{\mathbf{T}_i} L_i
+    \mathbf{B}'_{i^*}=\mathop{\arg\min}\limits_{\mathbf{B}'_i} L_i
 \end{equation}
-理论上$\mathop{\arg\min}$操作是不可微的，本文使用了类似神经网络量化中的直通估计器（Straight Through Estimator，STE）\cite{bengio2013estimating}
-使梯度跳过了$\mathop{\arg\min}$函数，即前向计算时使用$\mathop{\arg\min}$，梯度反向传播时跳过$\mathop{\arg\min}$并且仅让梯度传播至使得压缩误差最小的$\mathbf{T}_{i^*}$上：
+由于$\mathop{\arg\min}$是不可微的，因此使用加权混合代替$\mathop{\arg\min}$：
 \begin{equation}
-    \nabla_{\mathbf{T}_i}{\mathop{\arg\min}\limits_{\mathbf{T}_i} L_i} =\left\{\begin{matrix}
-        1,& \mathbf{T}_{i}=\mathbf{T}_{i^*}
-        \\0,& \mathbf{T}_{i} \ne \mathbf{T}_{i^*}
+\mathbf{B}'_{i^*}=\sum_{i\in\mathcal{I}} w_i\mathbf{B}'_i
+\end{equation}
+其中 $w_i$ 是配置 $i$ 的组合系数。由于最终我们只选择使得$L_i$最小的配置，
+因此实际上 $w_i$ 是 one-hot 的：
+\begin{equation}
+    w_i =\left\{\begin{matrix}
+        1,& i=\mathop{\arg\min}\limits_{i} L_i
+        \\0,& i\ne\mathop{\arg\min}\limits_{i} L_i
         \end{matrix}\right.
-\end{equation}
-\begin{equation}
-    \nabla_{\mathbf{T}'}{\mathop{\arg\min}\limits_{\mathbf{T}_i} L_i}=0
 \end{equation}
 这种方式的缺点是为了确定最佳的编码配置，在可微编解码过程中需要使用所有的编码配置进行编解码，
 才能计算出每个编码配置对应的压缩误差$L_i$，这产生了比较显著的计算开销，下一章中将针对这一问题进行改进。
