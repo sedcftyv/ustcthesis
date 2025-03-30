@@ -120,7 +120,7 @@ L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
         \\0,& i\ne\mathop{\arg\min}\limits_{i} L_i
         \end{matrix}\right.
 \end{equation}
-其中 $w_i$ 是配置 $i$ 的组合系数。由于最终我们只选择使得$L_i$最小的配置，
+其中 $w_i$ 是配置 $i$ 的组合系数。由于最终只选择使得$L_i$最小的配置，
 因此实际上 $w_i$ 是 one-hot 的。
 设所有编码配置集合$\mathcal{I}$中的配置数为$N$，
 这个方法的计算量是原来的$\frac{N_s+N_r}{N}$，当$N_s+N_r=N$时等价于上一章中的方法。
