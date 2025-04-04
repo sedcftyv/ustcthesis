@@ -1,6 +1,6 @@
 % !TeX root = ../main.tex
 
-\chapter{可微纹理块压缩模型}
+\chapter{可微块压缩模型}
 
 \section{引言}
 
@@ -10,71 +10,94 @@
 其中一个解决办法是根据压缩格式定义，实现可微的编解码器，并将其与神经网络模型
 结合，进行端到端联合优化，从而降低块压缩对神经网络模型造成的质量损失。
 目前已有基于可微BC6解码器的应用研究，但由于仅解码器框架的局限性，
-只能进行固定配置优化。本章提出了一种新颖的DXT格式可微纹理块压缩模型，包括可微编码器与可微解码器，
+只能进行固定配置优化。本章提出了一种新颖的DXT格式可微块压缩模型，包括可微编码器、可微解码器与可微配置选择器，
 可以根据编码误差动态选择编码配置。
 
 \section{问题描述}
 \label{问题描述}
 
-本章提出的模型旨在实现可微的DXT格式编解码器。
-将压缩前的原始纹理定义为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
-压缩后的纹理定义为$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$，
-其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。
-DXT格式编解码器的框架整体上可以使用如下形式表示：
-\begin{equation}
-    \mathbf{T}=\text{ConfigSelector}(\text{Decoder}(\text{Encoder}(\mathbf{T}')))
-\end{equation}
-其中Encoder表示可微编码器，Decoder表示可微解码器，ConfigSelector表示编码配置选择器。可微编码器首先将纹理分为4x4大小的纹理块，
-然后对于每个纹理块，使用不同的编码配置进行编码，每个编码配置经过可微解码器解码得到对应的纹理，
-最后编码配置选择器选择编码误差最小的结果作为输出。
-可微的编解码器使用时会结合到其他模型中进行端到端联合优化，优化完成后，
-对$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$使用标准DXT格式编码器即可得到较好的压缩格式数据。
-由于量化过程不可微，因此本章提出的模型忽略了量化过程。
+设计可微块压缩模型前需要分析DXT格式的主要特征，并根据其特征研究编解码过程的本质问题。
+DXT格式是BC1至BC7这7种格式的统称，这些格式都将纹理划分为4x4的纹理块进行压缩存储，
+其中BC6格式用于压缩HDR纹理，其余6种格式都用于压缩LDR纹理。
+DXT格式压缩纹理时会将纹理块中的像素（纹素）压缩为颜色端点与权重，解压时根据权重对颜色端点进行线性插值。
+因此DXT格式编码过程需要解决的本质问题是对于一组纹素，找到两个颜色端点，并为组内的每个纹素分配一个权重，
+使得根据颜色端点与权重解码后的纹素与原始纹素的误差尽可能小。
 
-DXT格式共包含BC1至BC7共7种格式，这些格式都将纹理划分为
-多个4x4的块进行压缩存储。由于DXT格式的共同特点是压缩时存储颜色端点与权重，解压时根据权重对颜色端点进行线性插值。
-因此在编码过程中，对于BC1至BC7这7种格式，在不考虑量化的情况下，需要解决的共同问题 $P_{m,n}$ 是：给定输入纹素组 $\mathbf{C}\in\mathbb{R}^{m\times n}$，
-找到适合表达该组纹素的线段端点 $\mathbf{e}_0\in\mathbb{R}^n$ 和 $\mathbf{e}_1\in\mathbb{R}^n$ 
-以及插值系数 $\mathbf{t}\in\mathbb{R}^m$。其中 $m$ 表示纹素个数，$n$ 表示纹素通道数。
+具体来讲，给定一组纹素 $\mathbf{C}\in\mathbb{R}^{m\times n}$，
+需要将其编码为两个颜色端点$\mathbf{e}_0\in\mathbb{R}^n$ 和 $\mathbf{e}_1\in\mathbb{R}^n$，
+以及用于插值的权重 $\mathbf{t}\in\mathbb{R}^m$。其中 $m$ 表示该纹素组中的纹素个数，$n$ 表示每个纹素的通道数。
+该编码问题可以表示为$P_{m,n}$。
 
-对于 BC1 和 BC4，编码问题分别为 $P_{16,3}$ 和 $P_{16,1}$。
-BC3 的编码问题可以拆分为 $P_{16,3}$ 和 $P_{16,1}$。
-而 BC2 可以看成是 BC3 的特化形式，
-即 alpha 通道的线段端点是 $0$ 和 $1$。
-BC5 相当于两个通道分别使用BC4格式。BC6 包含单分区($P_{16,3}$)和双分区配置，
-而双分区配置编码问题可以拆分为 $P_{m_1,3}$ 和 $P_{m_2,3}$，
-其中 $m_1$ 和 $m_2$ 是两个分区的纹素个数。
+BC1将4x4纹理块中所有纹素的3通道颜色压缩为2个颜色端点与16个权重。
+BC2支持4通道纹理，并将前3个通道使用BC1压缩，第4个通道直接将颜色进行量化
+作为权重，相当于为第4个通道使用了0和1两个颜色端点。
+BC3同样支持4通道纹理，并将前3个通道使用BC1压缩，第4个通道单独存储两个颜色端点与16个权重。
+BC4支持单通道纹理，存储两个颜色端点与16个权重。
+BC5支持双通道纹理，每个通道分别存储两个颜色端点与16个权重。
 
-BC7 包含模式0至模式7共8种编码模式，其中模式0到模式3用于压缩 3 通道纹理，
-而模式4到模式7用于压缩 4 通道纹理。模式1和模式3使用了双分区配置，
-其编码问题都同于BC6的双分区配置；模式0和模式2是三分区配置，
-编码问题可以拆分为 $P_{m_1,3}$、$P_{m_2,3}$ 和 $P_{m_3,3}$，
-其中 $m_1$、$m_2$ 和 $m_3$ 是三个分区的纹素个数；模式4和模式5包含 4 种旋转配置，
-每个旋转配置的编码问题同于 BC3；模式6的编码问题为 $P_{16,4}$；
-模式7是双分区配置，其编码问题可以拆分为  $P_{m_1,4}$ 和 $P_{m_2,4}$。
+BC6支持3通道的HDR纹理，同时具有14种不同模式，前10种模式为双分区模式，
+会将4x4的纹理块分为两个区域压缩，每个区域分别存储各自的颜色端点与权重。
+最后4种模式为单分区模式。
 
-综上所述，BC7中用于压缩RGBA纹理，包含了分区和旋转的模式4至模式7可以看作DXT格式中最复杂的格式。
-不考虑量化的情况下，其他编码格式相当于BC7中模式4至模式7的子集，
-可微BC7格式的RGBA编解码器可以较为容易地推广到其他DXT格式中。
-因此本文主要关注BC7格式的RGBA编解码器。专为HDR纹理设计的BC6格式
-十分适合压缩浮点数形式的神经特征，本文也实现了BC6格式的可微编解码器。
+BC7同时支持3通道与4通道纹理，共具有8种不同模式，前4种模式用于压缩3通道纹理，
+后4种模式用于压缩4通道纹理。其中模式1、3、7为双分区模式，
+模式0和2为三分区模式，模式4、5、6为单分区模式。
+模式4和5会将前3个通道与第4个通道分开压缩，并支持前3个通道中的某一个与第4个通道交换，
+这种处理方式被称为旋转。
+
+因此DXT格式的编码问题如表\ref{tab:DXTEncodeproblem}所示，其中其中$m_i$表示第$i$个分区中的纹素个数，
+对于双分区模式$m_1+m_2=16$，对于三分区模式$m_1+m_2+m_3=16$。
+只需要解决$P_{m,n}$就可以解决DXT格式的主要编码问题。
+\begin{table}[htbp]
+    \centering
+    \caption{DXT格式的编码问题}
+    \label{tab:DXTEncodeproblem}        
+    % \resizebox{6cm}{!}{
+    \begin{tabular}{ccccc}
+    \toprule
+    格式    & 模式 & 编码问题 \\
+    \midrule
+    BC1   & -  & $P_{16,3}$               \\
+    BC2   & - & $P_{16,3}$, $P_{16,1}$    \\
+    BC3   & - & $P_{16,3}$, $P_{16,1}$    \\
+    BC4   & - & $P_{16,1}$                  \\
+    BC5   & - & $P_{16,1}$     \\
+    \midrule
+    \multirow{2}{*}{BC6}   & 1-10&   $P_{m_1,3}$, $P_{m_2,3}$     \\
+       &11-14&  $P_{16,3}$     \\
+    \midrule
+    \multirow{5}{*}{BC7}   & 1, 3&   $P_{m_1,3}$, $P_{m_2,3}$     \\
+        &0, 2&  $P_{m_1,3}$, $P_{m_2,3}$, $P_{m_3,3}$     \\  
+        &4, 5&  $P_{16,3}$, $P_{16,1}$     \\    
+        &6&  $P_{16,4}$     \\  
+        &7&  $P_{m_1,4}$, $P_{m_2,4}$     \\
+    \bottomrule
+    \end{tabular}
+    % }   
+\end{table}
+
+除此之外，还需要解决编码过程的量化问题以及优化过程的范围约束问题，本章分别在
+\ref{模拟量化}与\ref{范围约束}中讨论了这两个问题。
 
 
 \section{模型框架}
 
 \subsection{整体框架}
 
-整体框架如图\ref{fig:DBC_overview}所示，
-图中展示了可微编解码器架构(DBC)，并以神经纹理压缩为例，
-展示了可微编解码器与其他压缩方法结合的管线。
-其中最左边的输入纹理为神经纹理压缩中的纹理形式的特征网格，
-经过可微编码器后通过不同编码配置进行了编码，之后每种编码经过
-可微解码器进行解码，然后使用配置选择器根据编码误差选择最佳编码配置，
-并输出对应的编解码结果，之后使用神经网络对可微编解码后的特征网格
-进行解码，得到最终的解码纹理。
+将压缩前的原始纹理定义为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
+压缩后的纹理定义为$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$，
+其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。
+DXT格式编解码器的框架可以使用如下形式表示：
+\begin{equation}
+    \mathbf{T}=\text{ConfigSelector}(\text{Decoder}(\text{Encoder}(\mathbf{T}')))
+\end{equation}
+其中Encoder表示编码器，Decoder表示解码器，ConfigSelector表示编码配置选择器。编码器首先将纹理分为4x4大小的纹理块，
+然后对于每个纹理块，使用不同的编码配置进行编码，每个编码配置经过解码器解码得到对应的纹理，
+最后编码配置选择器选择编码误差最小的结果作为输出。因此可微块压缩模型也需要包括可微编码器、可微解码器与
+可微配置选择器三个部分。对于BC1至BC5这5种单模式格式，由于仅有一种编码配置，因此不需要配置选择器。
 
-需要注意的是，由于本文所提出的可微编解码器本身没有需要优化的参数，
-因此结合到其他压缩方法并进行联合优化时，损失函数仅为整体误差。
+基于上述DXT格式编解码器的基本框架，本章提出了一种基于DXT格式的可微块压缩模型(Differentiable Block Compression, DBC)， 
+旨在实现可微的DXT格式编解码器，从而作为DXT格式编解码器的可微近似加入神经网络的优化过程，实现端到端优化。
 
 \begin{figure}[htbp]
     \centering
@@ -83,65 +106,140 @@ BC7 包含模式0至模式7共8种编码模式，其中模式0到模式3用于�
     \label{fig:DBC_overview}
 \end{figure}
 
+DBC模型的整体架构如图\ref{fig:DBC_overview}所示，
+图中展示了DBC的编解码器架构，并以神经压缩技术为例展示了DBC的端到端优化流程。
+其中最左边的输入纹理为神经压缩技术中的纹理形式的特征网格，即神经纹理。
+神经纹理经过可微编码器后通过不同编码配置进行了编码，之后每种编码经过
+可微解码器进行解码，然后使用配置选择器根据编码误差选择编码配置，
+并输出对应的编解码结果，最后使用神经网络对可微编解码后的神经纹理
+进行解码，得到最终的解压缩纹理。
+
+本文所提出的DBC模型本身没有需要优化的参数，
+因此结合到神经压缩技术并进行联合优化时使用神经压缩模型的损失函数，
+除此之外，对于支持LDR纹理的BC1至BC5以及BC7格式，
+为了使优化后的神经纹理在合理的范围（0-1之间），为损失函数增加了一项
+范围损失。
+对于支持HDR纹理的BC6格式则不需要增加范围损失。
+
 
 \subsection{可微编解码器}
 
-在可微编码中，\ref{问题描述}中的公共问题 $P_{m,n}$ 可以通过主成分分析(PCA)来解决。
-首先，计算中心化的纹素组 $\mathbf{C}_{\text{center}}\in\mathbb{R}^{m\times n}$：
+编码过程需要解决\ref{问题描述}中的编码问题 $P_{m,n}$ 。即对于给定的4x4纹理块，
+计算这16个纹理像素（纹素）的颜色端点与权重，使其解压缩后的误差尽可能小。
+以RGB纹理为例，这个过程的直观理解如下：
+将16个纹素的RGB值视为三维空间中的xyz坐标，16个纹素对应了三维空间中的16个点，
+找到一条离这16个点距离最近的直线，
+这条直线对应的方向向量称为颜色主方向，
+然后将16个点投影到直线上，
+取距离最远的两个投影点作为颜色端点。
+投影点在两个颜色端点构成的线段上的位置即为权重。
 
+DBC模型采用主成分分析法(Principal Component Analysis, PCA)计算
+颜色主方向。PCA有两种常见的实现方式，一种方式为根据中心化的数据计算协方差矩阵，
+然后对协方差矩阵利用幂迭代等技术进行特征值分解。第二种方式为直接对中心化的数据
+矩阵进行奇异值分解(Singular Value Decomposition, SVD)，由于SVD的计算过程梯度
+更稳定，因此采用SVD实现PCA。
+
+具体来讲，将编码问题 $P_{m,n}$中的一组纹素的颜色组成的矩阵定义为
+$\mathbf{C}\in\mathbb{R}^{m\times n}$，其中 $m$ 表示该纹素组中的纹素个数，$n$ 表示每个纹素的通道数。
+中心化的颜色矩阵定义为$\mathbf{C}_{\text{center}}\in\mathbb{R}^{m\times n}$：
 \begin{equation}
-\mathbf{C}_{\text{center}}=\mathbf{C}-\text{mean}(\mathbf{C})
+\mathbf{C}_{\text{center}}=\mathbf{C}-\mathbf{C}_{\text{mean}}
 \end{equation}
-然后，对 $\mathbf{C}_{\text{center}}$ 进行奇异值分解(SVD)：
+其中$\mathbf{C}_{\text{mean}}\in\mathbb{R}^{n}$表示这组纹素的颜色均值。
+然后对 $\mathbf{C}_{\text{center}}$ 进行奇异值分解(SVD)：
 \begin{equation}
 \mathbf{C}_{\text{center}}=\mathbf{U}\text{diag}(\mathbf{s})\mathbf{V}^T
 \end{equation}
-其中，$\mathbf{U}\in \mathbb{R}^{m \times m}$，$\mathbf{s}\in \mathbb{R}^{n}$，$\mathbf{V}\in \mathbb{R}^{n\times n}$，$\text{diag}(\mathbf{s})\in\mathbb{R}^{n\times n}$ 表示以 $\mathbf{s}$ 为对角元素的对角矩阵。
-选择 $\mathbf{V}$ 中最大奇异值对应的奇异向量 $\mathbf{v}'\in \mathbb{R}^{n}$ 作为主方向。
-接着，将中心化的纹素组 $\mathbf{C}_\text{center}$ 投影到主方向 $\mathbf{v}'$ 上，
-得到权重 $\mathbf{t}'\in\mathbb{R}^{m}$：
+其中$\mathbf{U}\in \mathbb{R}^{m \times m}$，
+$\text{diag}(\mathbf{s})\in\mathbb{R}^{m\times n}$，
+$\mathbf{V}\in \mathbb{R}^{n\times n}$。
+选择 $\mathbf{V}$ 中最大奇异值对应的奇异向量 $\mathbf{v}\in \mathbb{R}^{n}$ 作为颜色主方向。
+然后对颜色主方向$\mathbf{v}$进行归一化：
 \begin{equation}
-\mathbf{t}'=\mathbf{C}_{\text{center}}\cdot\mathbf{v}'
+    \mathbf{v}'=\frac{\mathbf{v}}{\|\mathbf{v}\|}
 \end{equation}
-从而可以得到两个颜色端点 $\mathbf{e}'_0\in\mathbb{R}^n$ 和 $\mathbf{e}'_1\in\mathbb{R}^n$：
+其中$\mathbf{v}'$表示归一化后的颜色主方向，
+$\|\mathbf{v}\|$表示向量$\mathbf{v}$的模长。
+接着，将中心化的颜色矩阵 $\mathbf{C}_\text{center}$ 投影到归一化的颜色主方向 $\mathbf{v}'$ 上，
+得到这组纹素在颜色主方向$\mathbf{v}'$上的投影距离颜色均值$\mathbf{C}_{\text{mean}}$的偏移长度 $\mathbf{l}\in\mathbb{R}^{m}$：
 \begin{equation}
-\mathbf{e}'_0=\text{mean}(\mathbf{C})+\text{min}(\mathbf{t}')\mathbf{v}\\
-\mathbf{e}'_1=\text{mean}(\mathbf{C})+\text{max}(\mathbf{t}')\mathbf{v}
+\mathbf{l}=\mathbf{C}_{\text{center}}\cdot\mathbf{v}'
 \end{equation}
-由于端点的数值范围应在 $[0,1]$ 之间，因此需要对端点进行 clamp 操作。
-为了保证训练时梯度在端点超出有效数值范围时非零，使用 $\text{leakyclamp}$，从而得到近似处于有效范围的端点 $\mathbf{e}_0$ 和 $\mathbf{e}_1$：
-\begin{equation}
-\mathbf{e}_0=\text{leakyclamp}(\mathbf{e}'_0,0,1)\\
-\mathbf{e}_1=\text{leakyclamp}(\mathbf{e}'_1,0,1)
-\end{equation}
-\begin{equation}
-\text{leakyclamp}(x,a,b)=\text{clamp}(x,a,b)\\
-                        +\epsilon[(\max(x,b)-b)+(\min(x,a)-a)]
-\end{equation}
-其中$\epsilon=0.01$。
+取距离最远的两个投影点作为颜色端点
+$\mathbf{e}_0\in\mathbb{R}^n$ 和 $\mathbf{e}_1\in\mathbb{R}^n$：
+\begin{align}
+\mathbf{e}_0=\mathbf{C}_{\text{mean}}+\mathbf{l}_\text{min}\mathbf{v}\\
+\mathbf{e}_1=\mathbf{C}_{\text{mean}}+\mathbf{l}_\text{max}\mathbf{v}
+\end{align}
+其中$\mathbf{l}_\text{min}$与$\mathbf{l}_\text{max}$分别表示
+偏移长度$\mathbf{l}$的最小值与最大值。
 
-然后需要重新计算主方向 $\mathbf{v}\in\mathbb{R}^n$ 并重新投影得到权重 $\mathbf{t}''\in\mathbb{R}^m$：
-\begin{equation}
-\mathbf{v}=\frac{\mathbf{e}_1-\mathbf{e}_0}{\|\mathbf{e}_1-\mathbf{e}_0\|}\\
-\mathbf{t}''=\frac{(\mathbf{C}-\mathbf{e}_0)\cdot\mathbf{v}}{\|\mathbf{e}_1-\mathbf{e}_0\|}
-\end{equation}
-同样需要用 $\text{leakyclamp}$ 使权重 $\mathbf{t}''$ 处于有效数值范围 $[0,1]$ 内，即
-\begin{equation}
-\mathbf{t}=\text{leakyclamp}(\mathbf{t}'',0,1)
-\end{equation}
-解码器进行插值得到解码的纹素组 $\mathbf{C}'\in\mathbb{R}^{m\times n}$ 为
+最后将纹素组中每个纹素的颜色投影到颜色端点$\mathbf{e}_0$和$\mathbf{e}_1$构成的线段上，
+得到每个纹素的权重$\mathbf{t}\in\mathbb{R}^m$：
+\begin{align}
+    \mathbf{v''}=\frac{\mathbf{e}_1-\mathbf{e}_0}{\|\mathbf{e}_1-\mathbf{e}_0\|}\\
+    \mathbf{t}=\frac{(\mathbf{C}-\mathbf{e}_0)\cdot\mathbf{v''}}{\|\mathbf{e}_1-\mathbf{e}_0\|}
+\end{align}
+其中$\mathbf{v''}$表示颜色端点$\mathbf{e}_0$和$\mathbf{e}_1$构成的向量，
+$\mathbf{C}$表示纹素组的颜色矩阵。
+
+解码器进行线性插值得到解压缩的纹素组 $\mathbf{C}'\in\mathbb{R}^{m\times n}$：
 \begin{equation}
 \mathbf{C}'=\mathbf{e}_0(1-\mathbf{t})+\mathbf{e}_1\mathbf{t}
 \end{equation}
 
-解决了公共问题$P_{m,n}$后，每种DXT格式的编解码过程可以看作一系列
+解决了编码问题$P_{m,n}$后，DXT格式的编解码过程可以看作一系列
 $P_{m,n}$的组合，例如BC7中模式7具有的64种双分区对应64个$P_{m_1,n}$和
 $P_{m_2,n}$问题。
 
-接下来需要解决编码配置选择的问题，例如对于BC7中模式7具有的64种双分区，
-需要从中选择压缩误差最小的一种分区方案。
+\subsection{模拟量化}
+\label{模拟量化}
+
+标准DXT格式编码器在编码过程中会对颜色端点与权重进行量化，
+除BC6的颜色端点外，BC6的权重和其余6种格式的颜色端点与权重都使用
+均匀量化方法进行量化。为了更加接近标准DXT格式编码器，
+DBC模型会在编码完成后对颜色端点与权重进行模拟量化：
+\begin{equation}\label{eqn-quantize}
+    Q(r)=\frac{\left \lfloor r \times (2^{b}-1) \right \rceil}{2^{b}-1}
+\end{equation}
+其中$r$表示量化前的0-1浮点值，$b$表示量化位数，$Q(r)$表示经过模拟量化的浮点值，$\lfloor \cdot \rceil$表示
+用于舍入的Round函数。
+由于Round函数的梯度几乎处处为0，
+采用神经网络量化领域常用的直通估计器\cite{bengio2013estimating}(Straight-Through Estimator, STE)
+使得梯度得以正常传播：
+\begin{equation}\label{eqn-7}
+    \nabla_{x} \left \lfloor x \right \rceil=1
+\end{equation}
+
+DXT格式的均匀量化过程要求量化前的浮点值范围在0-1之间，
+而在基于梯度的优化过程中，难以保证颜色端点与权重的数值范围，
+因此通过最大最小缩放，在量化前将颜色端点与权重缩放到0-1之间，
+模拟量化后再恢复到之前的范围，以权重的缩放为例:
+\begin{equation}
+    \mathbf{t'}=\frac{\mathbf{t}-\mathbf{t}_\text{min}}{\mathbf{t}_\text{max}-\mathbf{t}_\text{min}}
+\end{equation}
+\begin{equation}
+    \mathbf{t''}=\mathbf{t'}(\mathbf{t}_\text{max}-\mathbf{t}_\text{min})+\mathbf{t}_\text{min}
+\end{equation}
+其中$\mathbf{t}\in\mathbb{R}^m$表示纹理经过
+可微编码后某个编码问题$P_{m,n}$的权重，
+$\mathbf{t}_\text{min}$和$\mathbf{t}_\text{max}$表示$\mathbf{t}$中的
+最大值与最小值。$\mathbf{t'}$表示$\mathbf{t}$缩放到0-1范围的值。
+$\mathbf{t''}$表示$\mathbf{t'}$经过公式\ref{eqn-quantize}的模拟量化后，缩放到原来范围的值。
+
+
+BC6格式颜色端点的量化过程比较特殊，
+会将原始的16位浮点颜色值按照内存中实际存储的二进制值解读为16位整数值，
+再进行均匀量化。这个过程属于非均匀量化，较难进行可微模拟，
+因此DBC模型对于BC6格式仅会对权重进行量化。
 
 \subsection{配置选择器}
+
+对于多模式的BC6与BC7，标准DXT格式编解码器编码每个纹理块的过程中
+会尝试搜索多种编码配置，例如使用不同的量化位数、分区以及旋转，
+最终选择一种使得编码误差较小的编码配置进行编码。基于梯度的优化过程中神经纹理会不断发生变化，因此具有配置选择器
+的DBC模型可以更好地编码神经纹理。
 
 设输入纹理块 $\mathbf{B}\in\mathbb{R}^{b\times n}$，其中 $b$ 是一个纹理块中的纹素个数。
 所有配置的集合为 $\mathcal{I}$，针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的压缩纹理块为 $\mathbf{B}'_i\in\mathbb{R}^{b\times n}$。
@@ -150,7 +248,7 @@ $P_{m_2,n}$问题。
 L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
 \end{equation}
 
-配置选择器的功能是对每个4x4纹理块$\mathbf{B}$，在不同编码配置中选择最佳配置，
+配置选择器的功能是对每4x4纹理块$\mathbf{B}$，在不同编码配置中选择最佳配置，
 即应该选择使得压缩误差$L_i$最小的编码配置$i^*$：
 \begin{equation}
     i^*=\mathop{\arg\min}\limits_{i} L_i
@@ -160,22 +258,24 @@ L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
 \begin{equation}
     \mathbf{B}'_{i^*}=\mathop{\arg\min}\limits_{\mathbf{B}'_i} L_i
 \end{equation}
-由于$\mathop{\arg\min}$是不可微的，因此使用加权混合代替$\mathop{\arg\min}$：
+由于$\mathop{\arg\min}$是不可微的，因此使用one-hot加权混合代替$\mathop{\arg\min}$：
 \begin{equation}
 \mathbf{B}'_{i^*}=\sum_{i\in\mathcal{I}} w_i\mathbf{B}'_i
 \end{equation}
-其中 $w_i$ 是配置 $i$ 的组合系数。由于最终只选择使得$L_i$最小的配置，
-因此实际上 $w_i$ 是 one-hot 的：
+其中 $w_i$ 是配置 $i$ 的组合系数。由于
+DXT格式编解码器最终只能选择一种配置进行编码，
+因此 $w_i$ 必须是 one-hot 的：
 \begin{equation}
     w_i =\left\{\begin{matrix}
         1,& i=\mathop{\arg\min}\limits_{i} L_i
         \\0,& i\ne\mathop{\arg\min}\limits_{i} L_i
         \end{matrix}\right.
 \end{equation}
-这种方式的缺点是为了确定最佳的编码配置，在可微编解码过程中需要使用所有的编码配置进行编解码，
+这种方式的缺点是为了确定最佳的编码配置，在可微编解码过程中需要尝试所有的编码配置，
 才能计算出每个编码配置对应的压缩误差$L_i$，这产生了比较显著的计算开销，下一章中将针对这一问题进行改进。
 
-
+\subsection{范围约束}
+\label{范围约束}
 
 \section{实验设计与分析}
 
