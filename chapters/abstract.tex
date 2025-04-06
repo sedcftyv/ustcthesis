@@ -1,38 +1,39 @@
 % !TeX root = ../main.tex
 
 \ustcsetup{
-  keywords  = {纹理压缩,可微近似,混合专家模型,渲染},
-  keywords* = {Texture Compression,Differentiable Approximation,Mixture of Experts,Rendering},
+  keywords  = {纹理压缩,可微近似,混合专家模型,神经压缩},
+  keywords* = {Texture Compression,Differentiable Approximation,Mixture of Experts,Neural Compression},
 }
 
 \begin{abstract}
 
   为了减少渲染过程中使用的大量纹理所占用的空间，同时保持高效的GPU硬件采样特性，
   纹理块压缩技术目前已经成为计算机图形学必不可少的组成部分。
-  随着神经网络技术在图形学领域的引用，为了降低显存开销，张量形式的神经特征可以视为神经纹理并使用块压缩技术压缩。
+  随着神经压缩技术在图形学领域的引用，为了降低显存开销，张量形式的神经特征可以视为神经纹理并使用块压缩技术压缩。
   但由于目前的纹理块压缩编解码器通常被设计为高效进行编解码，并未考虑压缩过程的可微性。
   因此在神经纹理经过反向传播算法优化的过程中，无法加入块压缩过程进行端到端优化。
-  神经纹理的训练与块压缩过程只能分阶段进行，导致块压缩对神经网络模型造成较大的质量损失。
+  神经纹理的训练与块压缩过程只能分阶段进行，导致块压缩对神经压缩模型造成较大的质量损失。
   
-  针对上述问题，本文提出了一种新颖的可微纹理块压缩模型。
-  该方法通过实现纹理块压缩编解码器的可微近似，使得块压缩可以整合到神经纹理的训练过程中，
-  从而通过这种端到端的优化方式降低块压缩对神经网络模型造成的质量损失。
+  针对上述问题，本文提出了一种新颖的可微块压缩模型。
+  该方法实现可微DXT格式编解码器，使得块压缩可以整合到神经纹理的训练过程中，
+  通过这种端到端的优化方式降低块压缩对神经压缩模型造成的质量损失。
   这种方法有效地扩展了纹理块压缩技术的应用场景。
-  对于块压缩技术编码过程中大量编码配置造成的计算开销，本文提出了一种基于混合专家模型的
-  编码配置选择器，通过随机采样与基于Top-k的选择策略，在几乎不影响编码质量的
-  前提下，将编码速度提升了一个数量级。
+  对于块压缩技术编码过程中大量编码配置造成的计算开销，
+  本文提出了一种基于混合专家模型的编码配置选择器，
+  通过随机采样与基于Top-k的选择策略，
+  在几乎不影响编码质量的前提下，显著提高了编码速度。
 
   具体来说，本文的研究内容和主要贡献如下：
   
   (1)提出了一种可微的DXT格式块压缩模型。基于DXT格式的定义，设计可微的
-  编码器、解码器，以及配置选择器，从而实现DXT格式块压缩编解码器的可微近似。该方法在三个应用
-  场景中与基线模型进行了对比，均展现出了优越的性能，从而验证了有效性。
+  编码器、解码器，以及配置选择器，从而实现DXT格式编解码器的可微近似。该方法在神经
+  压缩模型中进行实验，验证了有效性。
 
-  (2)在(1)的基础上提出了一种基于混合专家模型的编码配置选择器。该方法将编码配置
-  根据亲和度通过Top-k排序，分为始终激活的稳定配置与通过随机采样激活的随机配置。
-  只需使用数量较少的稳定配置与随机配置，就能接近枚举所有配置的编码质量，同时显著地
-  减少了计算开销。该方法同样在三个应用场景中与基线模型进行了对比，均能在保持质量的前提下，
-  相较基线模型较大程度地提升速度。
+  (2)在(1)的基础上提出了一种基于混合专家模型的编码配置选择器。
+  该方法将编码配置根据亲和度通过Top-k排序，
+  分为始终激活的稳定配置与通过随机采样激活的随机配置。
+  只需使用数量较少的稳定配置与随机配置，就能接近穷举所有配置的编码质量，
+  同时显著减少了计算开销。该方法在三个应用场景中进行实验，均展现出了良好的性能。
 
   % 硕士论文中文摘要一般600个汉字。
 
@@ -40,40 +41,24 @@
 
 \begin{abstract*}
 
-  To reduce the space occupied by the large number of textures used during the rendering process, 
-  while maintaining the efficient GPU hardware sampling characteristics, 
-  texture block compression techniques have become an indispensable component of computer graphics. 
-  With the integration of neural network technologies in the field of graphics, 
-  tensor based neural features can also be compressed using block compression techniques. 
-  However, current texture block compression codecs are typically designed for efficient encoding and decoding without considering the differentiability of the compression process. 
-  As a result, it is not possible to incorporate the texture block compression process into end-to-end optimization during the optimization of neural features via backpropagation algorithms. 
-  This ultimately leads to significant quality loss when directly applying block compression to the optimized neural features.
+  To reduce the storage space occupied by the large number of textures used during the rendering process, while maintaining the efficient GPU hardware sampling characteristics, texture block compression technology has become an essential component in computer graphics. With the introduction of neural compression techniques in the field of graphics, tensor-form neural features can be treated as neural textures and compressed using block compression methods to reduce memory usage. However, current texture block compression codecs are typically designed for efficient encoding and decoding, without considering the differentiability of the compression process. As a result, during the optimization of neural textures using backpropagation, the block compression process cannot be incorporated into end-to-end optimization. Consequently, the training of neural textures and the block compression process must occur in separate stages, leading to significant quality loss in the neural compression model due to the block compression.
 
   To address the aforementioned issue, 
-  this thesis proposes a novel differentiable texture block compression model. 
-  The method achieves a differentiable approximation of the encoder-decoder, 
-  allowing the compression process to be seamlessly integrated into the training or generation processes of other data. 
-  This end-to-end optimization approach helps reduce the quality loss caused by texture block compression. 
-  The proposed method effectively extends the applicability of texture block compression techniques. 
-  To mitigate the computational overhead introduced by the extensive encoding configurations during the block compression process, 
-  this thesis introduces an encoding configuration selector based on a mixture of experts model. 
-  By employing random sampling combined with a Top-k based selection strategy, 
-  the encoding speed is improved by an order of magnitude, with minimal impact on encoding quality.
+  this thesis proposes a novel differentiable block compression model. 
+  The method implements a differentiable DXT codec, 
+  allowing block compression to be integrated into the training process of neural textures. 
+  Through this end-to-end optimization approach, 
+  the quality loss caused by block compression in the neural compression model is reduced. 
+  This method effectively expands the application scope of texture block compression technology. 
+  To mitigate the computational overhead caused by the numerous encoding configurations during the block compression process, 
+  this thesis introduces an encoding configuration selector based on mixture of experts model. 
+  By employing random sampling and a Top-k-based selection strategy, 
+  the encoding speed is significantly improved with almost no impact on encoding quality.
 
   Specifically, the research presented in this thesis and its main contributions are as follows:
 
-  (1) A differentiable DXT-format texture block compression model is proposed. 
-  Based on the definition of the DXT format, differentiable encoders, decoders, 
-  and configuration selectors are designed, enabling a differentiable approximation of the DXT format encoder-decoder. 
-  The proposed method is compared with baseline models across three application scenarios, 
-  demonstrating superior performance and validating its effectiveness.
+  (1) A differentiable DXT format block compression model is proposed. Based on the definition of the DXT format, differentiable encoders, decoders, and configuration selectors are designed to achieve a differentiable approximation of the DXT codec. The method is experimentally validated in neural compression models, demonstrating its effectiveness.
   
-  (2) Building upon (1), an encoding configuration selector based on a mixture of experts model is introduced. 
-  This method sorts encoding configurations based on affinity scores using a Top-k strategy, 
-  categorizing them into stable configurations that are always activated and random configurations activated through random sampling. 
-  By using a smaller number of stable and random configurations, 
-  the method achieves encoding quality close to that of enumerating all configurations while significantly reducing computational overhead. 
-  This approach is also compared with baseline models in three application scenarios, 
-  showing a substantial speedup while maintaining quality compared to the baseline models.
+  (2) Building on (1), a coding configuration selector based on mixture of experts model is proposed. This method sorts encoding configurations based on affinity using Top-k ranking, dividing them into stable configurations that are always activated and random configurations activated through random sampling. By using only a small number of stable and random configurations, the method can achieve encoding quality close to that of exhaustive configuration enumeration, while significantly reducing computational overhead. The method is experimentally validated in three application scenarios, demonstrating excellent performance in all cases.
 
 \end{abstract*}
