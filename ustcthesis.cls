@@ -1839,7 +1839,7 @@
   \ifustc@degree@doctor
     \renewcommand\ustc@thesis@name{工程博士学位论文}
   \else
-    \renewcommand\ustc@thesis@name{专业硕士学位论文}
+    \renewcommand\ustc@thesis@name{工程硕士学位论文}
   \fi
   \ifustc@cjk@font@mac
     \providecommand\lishu{\CJKfamily{zhli}}
@@ -1926,7 +1926,7 @@
     {\fontsize{16bp}{31bp}\selectfont
       \begin{tabular}{@{}l@{\quad}l@{}}%
         \textsf{作者姓名：} & \ustc@author \\
-        \textsf{学科专业：} & \ustc@speciality \\
+        \textsf{类别领域：} & \ustc@speciality \\
         \ifx\ustc@practice@supervisor\@empty
           \textsf{导\hspace{2em}师：} & \ustc@supervisor@names \\
         \else
