@@ -13,7 +13,7 @@
 只能进行固定配置优化。本章提出了一种新颖的DXT格式可微块压缩模型，包括可微编码器、可微解码器与配置选择器，
 可以根据编码误差动态选择编码配置。
 
-\section{问题描述}
+\section{问题描述与分析}
 \label{问题描述}
 
 设计可微块压缩模型前需要分析DXT格式的主要特征，并根据其特征研究编解码过程的本质问题。
@@ -102,7 +102,7 @@ DXT格式编解码器的框架可以使用如下形式表示：
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=1\linewidth]{figures/DBC.pdf}
-    \caption{整体框架}
+    \caption{可微块压缩模型的整体框架}
     \label{fig:DBC_overview}
 \end{figure}
 
@@ -242,42 +242,43 @@ BC6格式颜色端点的量化过程比较特殊，
 的DBC模型可以更好地编码神经纹理。
 
 设输入纹理块 $\mathbf{B}\in\mathbb{R}^{b\times n}$，其中 $b$ 是一个纹理块中的纹素个数。
-所有配置的集合为 $\mathcal{I}$，针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的压缩纹理块为 $\mathbf{B}'_i\in\mathbb{R}^{b\times n}$。
-定义编码配置$i$对应的压缩误差 $L_i$ 为
+所有配置的集合为 $\mathcal{I}$，针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的
+纹理块为 $\mathbf{B}'_i\in\mathbb{R}^{b\times n}$。
+定义编码配置$i$对应的编码误差 $L_i$ 为
 \begin{equation}
 L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
 \end{equation}
 
 配置选择器的功能是对每4x4纹理块$\mathbf{B}$，在不同编码配置中选择最佳配置，
-即选择使得压缩误差$L_i$最小的编码配置$i^*$：
+即选择使得编码误差$L_i$最小的编码配置$i^*$：
 \begin{equation}
     i^*=\mathop{\arg\min}\limits_{i} L_i
 \end{equation}
 
-为了确定每个编码配置$i$对应的压缩误差$L_i$，
+为了确定每个编码配置$i$对应的编码误差$L_i$，
 本章使用了穷举的方法，对每4x4纹理块都会使用所有编码配置进行编码，
-并输出压缩误差最小的结果。
+从而计算每4x4纹理块所有编码配置对应的编码误差。
 由于优化过程需要进行大量迭代，
 这会产生显著的计算开销，下一章将针对这一问题进行改进。
 
-% 由于在计算压缩误差之前，已经对每种编码配置都进行了可微编解码，配置选择器可以
-% 直接将使用了$i^*$进行编解码得到的$\mathbf{B}'_{i^*}$作为输出。
-% \begin{equation}
-%     \mathbf{B}'_{i^*}=\mathop{\arg\min}\limits_{\mathbf{B}'_i} L_i
-% \end{equation}
-% 由于$\mathop{\arg\min}$是不可微的，因此使用one-hot加权混合代替$\mathop{\arg\min}$：
-% \begin{equation}
-% \mathbf{B}'_{i^*}=\sum_{i\in\mathcal{I}} w_i\mathbf{B}'_i
-% \end{equation}
-% 其中 $w_i$ 是配置 $i$ 的组合系数。由于
-% DXT格式编解码器最终只能选择一种配置进行编码，
-% 因此 $w_i$ 必须是 one-hot 的：
-% \begin{equation}
-%     w_i =\left\{\begin{matrix}
-%         1,& i=\mathop{\arg\min}\limits_{i} L_i
-%         \\0,& i\ne\mathop{\arg\min}\limits_{i} L_i
-%         \end{matrix}\right.
-% \end{equation}
+由于在计算编码误差之前，已经对每种编码配置都进行了可微编解码，配置选择器可以
+直接将使用了$i^*$进行编解码得到的$\mathbf{B}'_{i^*}$作为输出。
+\begin{equation}
+    \mathbf{B}'_{i^*}=\mathop{\arg\min}\limits_{\mathbf{B}'_i} L_i
+\end{equation}
+由于$\mathop{\arg\min}$是不可微的，因此使用one-hot加权混合代替$\mathop{\arg\min}$：
+\begin{equation}
+\mathbf{B}'_{i^*}=\sum_{i\in\mathcal{I}} w_i\mathbf{B}'_i
+\end{equation}
+其中 $w_i$ 是配置 $i$ 的组合系数。由于
+对于每个4x4纹理块$\mathbf{B}$最终只能选择一种配置进行编码，
+因此 $w_i$ 必须是 one-hot 的：
+\begin{equation}
+    w_i =\left\{\begin{matrix}
+        1,& i=\mathop{\arg\min}\limits_{i} L_i
+        \\0,& i\ne\mathop{\arg\min}\limits_{i} L_i
+        \end{matrix}\right.
+\end{equation}
 
 \subsection{范围约束}
 \label{范围约束}
@@ -417,7 +418,8 @@ DBC6/DBC7模型每次迭代过程中，对每4x4块会尝试所有的编码配�
 而两个固定配置的DBC模型(DBC6s/DBC7s)相比(BC6/BC7)取得了更好的结果,
 证明向神经压缩模型加入DBC模型并进行优化有效降低了神经纹理经过DXT格式压缩造成的损失。
 两个每次迭代中尝试了所有编码配置的DBC模型(DBC6/DBC7)取得了最好的结果，
-证明DBC模型支持多种编码配置选择的编解码器框架相对只支持固定编码配置的仅解码框架具有一定优势。
+证明DBC模型支持编码配置动态选择的编解码器框架相对只支持固定编码配置的仅解码框架具有更好的编码质量，
+同时更加接近标准的DXT编解码器，因此对神经纹理的优化效果更好。
 BC7的相关方法(BC7/DBC7s/DBC7)相较于BC6的相关方法(BC6/DBC6s/DBC6)取得更好的结果，
 主要原因有两个，首先相同存储空间BC7相比BC6可以多存储一个通道的数据，
 其次DBC模型对BC7的颜色量化与权重都进行了模拟量化，而对于BC6由于颜色量化过程较难模拟，
@@ -449,7 +451,7 @@ BC7的相关方法(BC7/DBC7s/DBC7)相较于BC6的相关方法(BC6/DBC6s/DBC6)取
 \end{table*}
 
 \subsubsection{性能测试}
-
+\label{3:性能测试}
 在6个材质的纹理集上进行了不同方法的性能测试，
 实验结果取6次实验的平均值。
 实验结果如表\ref{3:6个材质的纹理集上进行的性能实验}所示，
