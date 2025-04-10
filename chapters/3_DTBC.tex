@@ -439,7 +439,13 @@ BC7的相关方法(BC7/DBC7s/DBC7)相较于BC6的相关方法(BC6/DBC6s/DBC6)取
 仅对权重进行了模拟量化，因此与标准的BC6编解码器会有一定差异，导致对神经纹理的优化效果弱于BC7。
 % 6个材质的纹理集中Ukulele\_01的神经压缩实验的可视化结果如图所示，
 
-
+对比实验可视化结果如图\ref{fig:nm_v3}所示。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\linewidth]{figures/nm_v3.pdf}
+    \caption{对比实验可视化}
+    \label{fig:nm_v3}
+\end{figure}
 
 
 \begin{table*}[htbp]
@@ -449,16 +455,16 @@ BC7的相关方法(BC7/DBC7s/DBC7)相较于BC6的相关方法(BC6/DBC6s/DBC6)取
     \resizebox{\linewidth}{!}{
     \begin{tabular}{ccccccccccccccccccc}
         \toprule
-        & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{dartboard} & \multicolumn{3}{c}{Drill\_01}\\
+        & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{lubricant\_spray} & \multicolumn{3}{c}{Drill\_01}\\
                   & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓) & PSNR(↑)& SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
                   \midrule
-                  BC6       & 22.3005  & 0.6716  & 0.2713 & 24.1197 & 0.7007  & 0.2161 & 23.8151 & 0.6977  & 0.2341  & 20.1739 & 0.604  & 0.3457 & 20.4314 & 0.5262 & 0.3073 & 22.6281 & 0.7039 & 0.2976  \\
-                  DBC6s     & 27.1085  & 0.7625  & 0.1705 & 27.8752 & 0.8197  & 0.1332 & 28.027  & 0.7853  & 0.1472  & 25.7551 & 0.7407 & 0.2197 & 23.7457 & 0.5955 & 0.2289 & 26.8157 & 0.8328 & 0.163  \\
-                  DBC6      & \textbf{27.083}   & \textbf{0.7622}  & \textbf{0.1707} & \textbf{27.9227} & \textbf{0.8233}  & \textbf{0.1322} & \textbf{28.0362} & \textbf{0.7877}  & \textbf{0.1453}  & \textbf{25.8831} & \textbf{0.7453} & \textbf{0.2163} & \textbf{23.9072} & \textbf{0.5989} & \textbf{0.2245} & \textbf{26.8316} & \textbf{0.8295}  & \textbf{0.1693}   \\
+                  BC6       & 22.3005  & 0.6716  & 0.2713 & 24.1197 & 0.7007  & 0.2161 & 23.8151 & 0.6977  & 0.2341  & 20.1739 & 0.604  & 0.3457 & 22.6572 & 0.6651 & 0.2726 & 22.6281 & 0.7039 & 0.2976  \\
+                  DBC6s     & \textbf{27.1085}  & \textbf{0.7625}  & \textbf{0.1705} & 27.8752 & 0.8197  & 0.1332 & 28.027  & 0.7853  & 0.1472  & 25.7551 & 0.7407 & 0.2197 & 26.0462 & 0.7785 & 0.1846 & 26.8157 & 0.8328 & 0.163  \\
+                  DBC6      & 27.083   & 0.7622  & 0.1707 & \textbf{27.9227} & \textbf{0.8233}  & \textbf{0.1322} & \textbf{28.0362} & \textbf{0.7877}  & \textbf{0.1453}  & \textbf{25.8831} & \textbf{0.7453} & \textbf{0.2163} & \textbf{26.0767} & \textbf{0.775}  & \textbf{0.1848} & \textbf{26.8316} & \textbf{0.8295}  & \textbf{0.1693}   \\
                   \midrule
-                  BC7       & 23.0234  & 0.6685  & 0.2606 & 25.0525 & 0.6602  & 0.2262 & 25.0392 & 0.7163  & 0.2338  & 22.45   & 0.6358 & 0.3009 & 21.5528 & 0.5536 & 0.3052 & 22.2064 & 0.7357 & 0.2971   \\
-                  DBC7s     & 30.2512  & 0.8221  & 0.1087 & 30.602  & 0.8683  & 0.0919 & 30.8006 & 0.8338  & 0.1068  & 29.6132 & 0.8223 & 0.1378 & 26.6591 & 0.6551 & 0.1671 & 31.8172 & 0.9084 & 0.0986  \\
-                  DBC7      & \textbf{30.534}   & \textbf{0.8277}  & \textbf{0.1018} & \textbf{30.8209} & \textbf{0.8736}  & \textbf{0.0871} & \textbf{31.154}  & \textbf{0.8412}  & \textbf{0.0998}  & \textbf{29.9482} & \textbf{0.8297} & \textbf{0.1294} & \textbf{26.8479} & \textbf{0.6582} & \textbf{0.1643} & \textbf{33.2971} & \textbf{0.9305} & \textbf{0.0783}   \\
+                  BC7       & 23.0234  & 0.6685  & 0.2606 & 25.0525 & 0.6602  & 0.2262 & 25.0392 & 0.7163  & 0.2338  & 22.45   & 0.6358 & 0.3009 & 21.4505 & 0.6852 & 0.2457 & 22.2064 & 0.7357 & 0.2971   \\
+                  DBC7s     & 30.2512  & 0.8221  & 0.1087 & 30.602  & 0.8683  & 0.0919 & 30.8006 & 0.8338  & 0.1068  & 29.6132 & 0.8223 & 0.1378 & 29.5706 & 0.8618 & 0.0949 & 31.8172 & 0.9084 & 0.0986  \\
+                  DBC7      & \textbf{30.534}   & \textbf{0.8277}  & \textbf{0.1018} & \textbf{30.8209} & \textbf{0.8736}  & \textbf{0.0871} & \textbf{31.154}  & \textbf{0.8412}  & \textbf{0.0998}  & \textbf{29.9245} & \textbf{0.8303} & \textbf{0.1304} & \textbf{29.7846} & \textbf{0.8666} & \textbf{0.0905} & \textbf{32.2309} & \textbf{0.9156} & \textbf{0.0893}   \\
         \bottomrule
 \end{tabular} }   
 \end{table*}
@@ -487,8 +493,8 @@ $+$4种旋转\times3种不同量化方案共77种编码配置，
                                     & BC6 & DBC6s & DBC6 & BC7  & DBC7s & DBC7 \\
         \midrule
         每次迭代的平均运行时间(ms)  & 33  &  80    & 1012 & 35   & 171   &  2938 \\
-        优化完成的平均迭代次数      & -   &  2083  & 1975 & -   & 3733   & 4150  \\
-        优化完成的平均时间(min)     & -   &  2.8  & 33.3 & -   & 10.6   &   203\\
+        优化完成的平均迭代次数      & -   &  2200  & 2083 & -   & 3750   &  4416 \\
+        优化完成的平均时间(min)     & -   &  3     & 35   & -   & 11      &  216\\
         \bottomrule
 \end{tabular} %}   
 \end{table*}
@@ -505,7 +511,7 @@ STE\cite{bengio2013estimating}近似舍入函数的梯度。
 的范围约束在BC7格式支持的LDR范围内。
 因此本节构建了如下DBC模型的变体：
 \begin{itemize}
-    \item DBC7s w/o $L_{clamp}$:移除了范围约束损失。
+    \item DBC7s w/o $L_{clamp}$：移除了范围约束损失。
     \item DBC7s w/o STE：移除了模拟量化。
     \item DBC6s w/o STE：移除了模拟量化。
 \end{itemize}
@@ -518,14 +524,15 @@ STE\cite{bengio2013estimating}近似舍入函数的梯度。
     \resizebox{\linewidth}{!}{
     \begin{tabular}{ccccccccccccccccccc}
         \toprule
-        & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{dartboard} & \multicolumn{3}{c}{Drill\_01}\\
-                              & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
+        & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{lubricant\_spray} & \multicolumn{3}{c}{Drill\_01}\\
+                               & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
         \midrule
-        DBC7s                 & 30.2512  & 0.8221  & 0.1087 & 30.602  & 0.8683 & 0.0919 & 30.8006 & 0.8338 & 0.1068 & 29.6132 & 0.8223 & 0.1378 & 26.6591 & 0.6551 & 0.1671 & 31.8172 & 0.9084 & 0.0986  \\
-        DBC7s w/o $L_{clamp}$  & 28.6012  & 0.7932  & 0.1393 & 29.1323 & 0.8000 & 0.1295 & 29.4279 & 0.8041 & 0.1355 & 27.5207 & 0.7758 & 0.1748 & 25.7235 & 0.6394 & 0.1919 & 28.9067 & 0.8469 & 0.1489  \\
-        DBC7s w/o STE          & 28.8298  & 0.7949  & 0.1373 & 29.4041 & 0.8098 & 0.1230 & 29.6283 & 0.8100 & 0.1310 & 27.7152 & 0.7818 & 0.1702 & 25.7907 & 0.1896 & 0.6418 & 29.2267 & 0.8580 & 0.1438  \\
-        DBC6s                 & 27.1085  & 0.7625  & 0.1705 & 27.8752 & 0.8197 & 0.1332 & 28.027  & 0.7853 & 0.1472 & 25.7551 & 0.7407 & 0.2197 & 23.7457 & 0.5955 & 0.2289 & 26.8157 & 0.8328 & 0.163  \\
-        DBC6s w/o STE          & 25.1120  & 0.7283  & 0.2027 & 25.8527 & 0.7740 & 0.1647 & 25.6907 & 0.7515 & 0.1815 & 23.2535 & 0.6880 & 0.2678 & 22.6342 & 0.5751 & 0.2512 & 24.4736 & 0.7804 & 0.2131 \\
+        DBC7s w/o $L_{clamp}$  & 28.6012  & 0.7932  & 0.1393 & 29.1323 & 0.8000 & 0.1295 & 29.4279 & 0.8041 & 0.1355 & 27.5207 & 0.7758 & 0.1748 & 28.4018 & 0.8405 & 0.1153 & 28.9067 & 0.8469 & 0.1489  \\
+        DBC7s w/o STE          & 28.8298  & 0.7949  & 0.1373 & 29.4041 & 0.8098 & 0.1230 & 29.6283 & 0.8100 & 0.1310 & 27.7152 & 0.7818 & 0.1702 & 26.8598 & 0.8098 & 0.1396 & 29.2267 & 0.8580 & 0.1438  \\
+        DBC7s                  & \textbf{30.2512}  & \textbf{0.8221}  & \textbf{0.1087} & \textbf{30.602}  & \textbf{0.8683}  & \textbf{0.0919} & \textbf{30.8006} & \textbf{0.8338}  & \textbf{0.1068}  & \textbf{29.6132} & \textbf{0.8223} & \textbf{0.1378} & \textbf{29.5706} & \textbf{0.8618} & \textbf{0.0949} & \textbf{31.8172} & \textbf{0.9084} & \textbf{0.0986}  \\        
+        \midrule
+        DBC6s w/o STE          & 25.1120  & 0.7283  & 0.2027 & 25.8527 & 0.7740 & 0.1647 & 25.6907 & 0.7515 & 0.1815 & 23.2535 & 0.6880 & 0.2678 & 24.1332 & 0.7084 & 0.2318 & 24.4736 & 0.7804 & 0.2131 \\
+        DBC6s                  & \textbf{27.1085}  & \textbf{0.7625}  & \textbf{0.1705} & \textbf{27.8752} & \textbf{0.8197}  & \textbf{0.1332} & \textbf{28.027}  & \textbf{0.7853}  & \textbf{0.1472}  & \textbf{25.7551} & \textbf{0.7407} & \textbf{0.2197} & \textbf{26.0462} & \textbf{0.7785} & \textbf{0.1846} & \textbf{26.8157} & \textbf{0.8328} & \textbf{0.163}  \\
         \bottomrule
 \end{tabular} }   
 \end{table*}
