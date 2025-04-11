@@ -109,21 +109,36 @@ DXT格式包含BC6在内共有BC1至BC7 7种格式，
 
 \subsection{纹理块压缩技术}
 目前国内外对于纹理块压缩技术已有充分的探索，在成果上产生了DXT、ETC、PVRTC和ASTC等高质量的纹理块压缩格式。
-DXT格式最早被称为S3TC\cite{iourcha1999system}，于1999年提出，是最早的纹理块压缩方案之一，它由S3公司开发并获得专利。
-微软在DirectX 6.0中将S3TC命名为DXT1。后续的DXT2-5格式增加了对Alpha通道纹理的支持。
-从DirectX 10开始，这些格式被称为BC1-BC3。
-BC1格式将纹理划分为4\times4个块，每个块存储两个颜色端点和16个2位索引。
-每个像素根据索引插值颜色端点。BC4和BC5被引入用于法线纹理压缩。
-随着DirectX 11的发布，BC6H专为高动态范围(HDR)纹理而设计，BC7专为高质量压缩而设计。
-在BC1的基础上，BC7支持复杂的多模式压缩设置，如块分区和旋转通道。
-爱立信纹理压缩(ETC)格式专为移动设备设计，这种压缩方案的第一个版本PACKMAN\cite{strom2004packman}于2004年推出。
+块截断编码(block truncation coding, BTC)\cite{delp1979image}
+是第一种针对灰度图像的块压缩方法。对于每4\times4的像素块，
+这种方法存储两个8位的灰度值端点，并使用每像素1位索引值选择两个灰度端点之一。
+Campbell等\cite{campbell1986two}
+通过引入256个值的调色板而不是灰度值，扩展了BTC以包含RGB颜色，
+但需要额外的内存查找，使其不如硬件支持的通过单次纹理访问解码像素的格式。 
+Knittel等\cite{knittel1996hardware}
+通过添加硬件支持和纹理系统提出了对该方法的改进。
+Iourcha等\cite{iourcha1999system}基于BTC的思想提出了PC平台上广泛使用的S3TC/DXT1格式。
+在 S3TC 中，4\times4 RGB 块使用两个 RGB565 端点和每个纹素的两位索引进行编码。
+根据其索引，每个纹素通过映射到由端点定义的 RGB 颜色空间中沿线段的四个点之一来重建。
+微软在DirectX 6.0 中将S3TC命名为DXT1。之后的DXT2-5支持了带有 alpha 通道的纹理。
+从 DirectX 10 开始，这些格式被称为 BC1-BC3。BC1格式将纹理分为4\times4大小的块，
+每个块存储两个颜色端点与16个2位索引，每个纹素根据索引对颜色端点进行线性插值。
+之后出现了用于法线贴图压缩的BC4 和 BC5。随着 DirectX 11 的发布，又推出了针对高动态范围 (HDR) 纹理的BC6H，
+为高质量压缩而设计的BC7。BC7在BC1基础上支持了分区、旋转等更复杂的多模式压缩设置。
+爱立信纹理压缩(ETC)格式被设计用于移动设备。该压缩方案的第一个版本 PACKMAN\cite{strom2004packman} 于 2004 年推出。
+此格式中，2\times4 纹素块通过存储单个色度值进行编码，然后索引到亮度偏移表中以产生最终颜色。
 2005年，PACKMAN的增强版本iPACKMAN\cite{strom2005packman}发布，通常称其为ETC1。
-2007年，基于ETC1改进的ETC2\cite{strom2007etc}格式被提出。
-专为iOS设备设计的PowerVR纹理压缩(PVRTC)方法于2003年由Fenney\cite{fenney2003texture}提出。
-自适应可缩放纹理压缩(ASTC)\cite{nystad2012adaptive}是目前最灵活的纹理压缩格式，它由ARM和AMD联合开发，于2012年推出。
-ASTC与BC7类似，将每个纹理块编码为颜色端点对与插值索引，同时支持预定义的分区。
-但ASTC独特的有界整数序列编码(BISE)和支持双线性上采样的权重网格等新特性使ASTC几乎成为目前最先进的纹理块压缩格式。
+ETC1引入了垂直或水平分区，每4\times4纹素块存储两个PACKMAN块。
+2007年，ETC2\cite{strom2007etc}通过为变化较大的块引入新的色度选项，进一步扩展了这种格式。
+专为iOS设备设计的PowerVR 纹理压缩(PVRTC)方法于2003年由 Fenney\cite{fenney2003texture}提出。
+这种格式使用两个或多个低分辨率图像，
+通过一个全分辨率的高频调制信号线性插值低分辨率图像中双线性上采样的纹素从而生成解压缩的纹素。
+自适应可扩展纹理压缩(ASTC)\cite{nystad2012adaptive}是目前最灵活的纹理压缩方案，
+它由 ARM 和 AMD 联合开发，于 2012 年推出。
+ASTC与BC7类似，将每个纹理块编码为颜色端点对与插值权重，并支持预定义分区。
+独特的有界整数编码(BISE)、支持双线性上采样的权重网格等特性使得ASTC几乎成为目前最先进的纹理压缩格式。
 ASTC由于没有受到PC端主流的图形接口DirectX支持，因此尚未被广泛用于PC平台，目前主要在移动设备上使用\cite{vaidyanathan2023random}。
+
 
 \subsection{神经压缩}
 

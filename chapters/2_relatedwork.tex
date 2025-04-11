@@ -125,7 +125,7 @@ BC6格式被专门设计用于高动态范围(HDR)的RGB纹理，每4\times4块�
 
 分区是指将4\times4的块分割为多个独立的子块单独压缩，
 如图\ref{fig:2-Partition}所示，4\times4的纹理块被分为红色与绿色两个分区，每个分区具有独立的颜色端点与权重。
-BC6共包括32种不同的分区，编码时编码器会根据压缩误差选择最合适的分区进行编码。
+BC6共包括32种不同的分区，编码时编码器会根据编码误差选择最合适的分区进行编码。
 
 \begin{figure}[htbp]
     \centering
@@ -139,7 +139,7 @@ BC6共有14种不同的模式，如表\ref{tab:BC6Mode}所示，其中模式1至
 对于双分区模式，会有5位的分区索引作为每个分区的唯一标识。
 每种模式还具有不同的颜色端点位数以及权重位数，例如模式10使用每通道6位（双分区共72位）的颜色端点和3位（双分区共48位）的权重进行存储。
 由于每个4\times4块可以使用不同的模式，还有专门的模式位作为每个模式的唯一标识。
-实际编码时，对于每4\times4的像素块，编码器都会根据编码产生的压缩误差在众多模式中选择最佳的编码配置。
+实际编码时，对于每4\times4的像素块，编码器都会根据编码产生的编码误差在众多模式中选择最佳的编码配置。
 
 \begin{table}[htbp]
     \centering
@@ -208,7 +208,7 @@ BC7共具有8种不同的模式，如表\ref{tab:BC7Mode}所示，
 模式4与模式5将RGB通道与A通道分开压缩，类似BC3，但增加了旋转操作，可以将RGB中的某个通道与A通道交换，
 由于A通道具有单独的颜色端点与权重，因此可以获得更好的压缩质量。模式4还具有2种不同的权重位数设置，
 即对RGB通道使用2位权重，A通道使用3位权重；或者RGB通道使用3位权重，A通道使用2位权重。
-因此模式4具有8种配置（4种旋转*2种权重设置）、模式5具有4种配置（4种旋转）。
+因此模式4具有8种配置（4种旋转\times2种权重设置）、模式5具有4种配置（4种旋转）。
 模式6存储两个RGBA颜色端点与权重，类似BC1。模式7为双分区模式，
 每个分区类似模式6，共具有64种不同分区。
 
@@ -307,20 +307,42 @@ DXT格式将纹理以颜色端点和权重的形式量化存储，
     \label{fig:MoE}
 \end{figure}
 
-自 MoE 架构提出以来，它已被广泛应用于多种机器学习模型中，包括支持向量机\cite{collobert2002parallel}、
-混合高斯过程模型\cite{tresp2001mixtures,rasmussen2001infinite}
-以及神经网络\cite{aljundi2017expert,garmash2016ensemble,eigen2013learning}。
+之后Jordan等\cite{jordan1994hierarchical}
+提出了一种树结构的分层MoE架构，可以使用期望最大化算法以有监督方式进行训练。
+Tresp等\cite{tresp2001mixtures}提出了混合高斯过程(Mixtures of Gaussian Processes, MGP)模型，
+该模型对于映射的最佳带宽依赖于输入的应用非常有用。
+Rasmussen等\cite{rasmussen2001infinite}提出一种MoE的扩展，其中各个专家是高斯过程 (Gaussian Processes, GP) 回归模型。
+Aljundi等\cite{aljundi2017expert}提出了一种基于专家网络的终身学习模型，基于之前学到的知识，新任务/专家将被学习并按顺序添加到模型中。
+Garmash等\cite{garmash2016ensemble}描述和评估了在神经机器翻译模型中基于MoE架构执行集成预测的方法。
+Eigen等\cite{eigen2013learning}将专家混合扩展到堆叠模型，即专家深度混合，具有多组门控和专家。通过将每个输入与每一层的专家组合相关联，可以指数级地增加有效专家的数量，同时保持适度的模型大小。
+Shazeer等\cite{shazeer2017outrageously}提出了稀疏门控混合专家层从而克服MoE为GPU带来的条件计算（分支）问题，并使用可训练的门控网络选择专家的稀疏组合，表明MoE可以应用于语言建模和翻译领域。
 
-然而，MoE 架构在条件计算中需要频繁进行分支操作以决定激活哪些专家网络，这与 GPU 的高度并行计算架构并不匹配，
-导致计算效率难以提升，训练成本显著增加，从而限制了 MoE 架构在大规模网络中的应用。
-为了解决这一问题，Shazeer 等\cite{shazeer2017outrageously}为 MoE 架构的门控网络引入了 softmax 和 Noisy Top-K 方法，
-从而克服了 MoE 的分支问题，并在模型容量上实现了超过 1000 倍的提升。
+目前MoE架构已经广泛应用在Transformers\cite{vaswani2017attention}中。
+Fedus等\cite{fedus2022switch}提出了一种基于 MoE 的编码器-解码器 Transformer 架构，称为 Switch Transformer，它使用简化的门控机制使训练更加稳定，从而使 MoE 在语言建模领域中更加实用。
+Du等\cite{du2022glam}提出并开发了一系列名为 GLaM（通才语言模型）的语言模型，它使用稀疏激活的专家混合架构来扩展模型容量，与密集变体相比，大大降低了训练成本。
+Zoph等\cite{zoph2022st}深入研究了MoE模型的不稳定性及微调困难的问题，为稀疏模型的实用可靠训练提供了设计指南。
+Lepikhin等\cite{lepikhin2020gshard}提出了一个由一组轻量级注释 API 和 XLA 编译器扩展组成的模块GShard。 GShard允许通过自动分片将具有稀疏门控混合专家的多语言神经机器翻译 Transformer 模型扩展到超过 6000 亿个参数。
+% 自 MoE 架构提出以来，它已被广泛应用于多种机器学习模型中，包括支持向量机\cite{collobert2002parallel}、
+% 混合高斯过程模型\cite{tresp2001mixtures,rasmussen2001infinite}
+% 以及神经网络\cite{aljundi2017expert,garmash2016ensemble,eigen2013learning}。
 
-目前，MoE 架构已广泛应用于 Transformers\cite{vaswani2017attention}中，
-例如 Switch Transformer\cite{fedus2022switch}、
-GLaM\cite{du2022glam}、ST-MOE\cite{zoph2022st}
-和 GShard\cite{lepikhin2020gshard}等。
+% 然而，MoE 架构在条件计算中需要频繁进行分支操作以决定激活哪些专家网络，这与 GPU 的高度并行计算架构并不匹配，
+% 导致计算效率难以提升，训练成本显著增加，从而限制了 MoE 架构在大规模网络中的应用。
+% 为了解决这一问题，Shazeer 等\cite{shazeer2017outrageously}为 MoE 架构的门控网络引入了 softmax 和 Noisy Top-K 方法，
+% 从而克服了MoE为GPU带来的条件计算（分支）问题，在模型容量上实现了超过 1000 倍的提升，
+% 并使用可训练的门控网络选择专家的稀疏组合，表明MoE可以应用于语言建模和翻译领域。
 
+% 目前，MoE 架构已广泛应用于 Transformers\cite{vaswani2017attention}中，
+% 例如 Switch Transformer\cite{fedus2022switch}、
+% GLaM\cite{du2022glam}、ST-MOE\cite{zoph2022st}
+% 和 GShard\cite{lepikhin2020gshard}等。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{figures/DeepSeekMoE.png}
+    \caption{DeepSeekMoE与传统MoE\cite{dai2024deepseekmoe}}
+    \label{fig:DeepSeekMoE}
+\end{figure}
 
 最近，DeepSeek-V3\cite{liu2024deepseek}作为一种先进的专家混合语言模型，
 采用了DeepSeekMoE架构\cite{dai2024deepseekmoe}以实现高效推理和经济训练。
@@ -331,12 +353,6 @@ GLaM\cite{du2022glam}、ST-MOE\cite{zoph2022st}
 将某些专家隔离为共享专家，这些专家始终处于激活状态，旨在捕获和巩固不同背景下的共同知识。
 受到 DeepSeekMoE 架构的启发，本文为可微块压缩模型引入了一种基于MoE架构的分区配置选择器，以提高分区配置选择的计算效率。
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=1\textwidth]{figures/DeepSeekMoE.png}
-    \caption{DeepSeekMoE与传统MoE\cite{dai2024deepseekmoe}}
-    \label{fig:DeepSeekMoE}
-\end{figure}
 
 \section{神经压缩}
 
@@ -361,7 +377,7 @@ NTC\cite{vaidyanathan2023random}的神经压缩框架如图\ref{fig:Nvidia}所�
 BCf\cite{weinreich2024real}的神经压缩框架如图\ref{fig:BCf}所示，其中特征网格以BC6格式存储，并通过可微的BC6解码器对特征
 网格进行训练。运行时从BC6格式的特征网格中采样特征向量并进行网络推理。这种方法进一步提高了
 纹理集的压缩率。
-不足之处在于仅解码器的优化架构无法根据编码产生的压缩误差选择最佳编码配置，只能以固定配置进行优化，
+不足之处在于仅解码器的优化架构无法根据编码产生的编码误差选择最佳编码配置，只能以固定配置进行优化，
 一定程度限制了BC6的压缩能力。
 
 \begin{figure}[htbp]
