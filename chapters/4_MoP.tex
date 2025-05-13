@@ -391,22 +391,53 @@ RGBM编码实验中由于RGBM编码模型本身无需训练，
     \caption{6个材质的纹理集上进行的对比实验结果}
     \label{6个材质的纹理集上进行的对比实验}        
     \resizebox{\linewidth}{!}{
-    \begin{tabular}{ccccccccccccccccccc}
-        \toprule
-        & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{lubricant\_spray} & \multicolumn{3}{c}{Drill\_01}\\
-                  & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓) & PSNR(↑)& SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
-        \midrule
-        BC6       & 22.3005  & 0.6716  & 0.2713 & 24.1197 & 0.7007  & 0.2161 & 23.8151 & 0.6977  & 0.2341  & 20.1739 & 0.604  & 0.3457 & 22.6572 & 0.6651 & 0.2726 & 22.6281 & 0.7039 & 0.2976  \\
-        DBC6s     & 27.1085  & 0.7625  & 0.1705 & 27.8752 & 0.8197  & 0.1332 & 28.027  & 0.7853  & 0.1472  & 25.7551 & 0.7407 & 0.2197 & 26.0462 & 0.7785 & 0.1846 & 26.8157 & 0.8328 & 0.163  \\
-        DBC6      & 27.083   & 0.7622  & 0.1707 & 27.9227 & 0.8233  & 0.1322 & 28.0362 & 0.7877  & 0.1453  & 25.8831 & 0.7453 & 0.2163 & 26.0767 & 0.775  & 0.1848 & 26.8316 & 0.8295  & 0.1693   \\
-        DBC6M     & \textbf{28.271}   & \textbf{0.7828}  & \textbf{0.1464} & \textbf{28.9463} & \textbf{0.8432}  & \textbf{0.1134} & \textbf{28.7504} & \textbf{0.8018}  & \textbf{0.1326}  & \textbf{26.8738} & \textbf{0.7626} & \textbf{0.1942} & \textbf{26.8452} & \textbf{0.8048} & \textbf{0.161} & \textbf{28.2355} & \textbf{0.8549} & \textbf{0.1394}  \\
-        \midrule
-        BC7       & 23.0234  & 0.6685  & 0.2606 & 25.0525 & 0.6602  & 0.2262 & 25.0392 & 0.7163  & 0.2338  & 22.45   & 0.6358 & 0.3009 & 21.4505 & 0.6852 & 0.2457 & 22.2064 & 0.7357 & 0.2971   \\
-        DBC7s     & 30.2512  & 0.8221  & 0.1087 & 30.602  & 0.8683  & 0.0919 & 30.8006 & 0.8338  & 0.1068  & 29.6132 & 0.8223 & 0.1378 & 29.5706 & 0.8618 & 0.0949 & 31.8172 & 0.9084 & 0.0986  \\
-        DBC7      & 30.534   & 0.8277  & 0.1018 & 30.8209 & 0.8736  & 0.0871 & 31.154  & 0.8412  & 0.0998  & 29.9245 & 0.8303 & 0.1304 & 29.7846 & 0.8666 & 0.0905 & 32.2309 & 0.9156 & 0.0893   \\
-        DBC7M     & \textbf{30.633}   & \textbf{0.8304}  & \textbf{0.0966} & \textbf{31.4472} & \textbf{0.8917}  & \textbf{0.0761} & \textbf{31.2531} & \textbf{0.844}   & \textbf{0.096}   & \textbf{30.0176} & \textbf{0.8314} & \textbf{0.1273} & \textbf{29.9894} & \textbf{0.8709} & \textbf{0.0865} & \textbf{33.6313} & \textbf{0.9326} & \textbf{0.0752}  \\
-        \bottomrule
-\end{tabular} }   
+    % \begin{tabular}{ccccccccccccccccccc}
+    %     \toprule
+    %     & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{lubricant\_spray} & \multicolumn{3}{c}{Drill\_01}\\
+    %               & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓) & PSNR(↑)& SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
+    %     \midrule
+    %     BC6       & 22.3005  & 0.6716  & 0.2713 & 24.1197 & 0.7007  & 0.2161 & 23.8151 & 0.6977  & 0.2341  & 20.1739 & 0.604  & 0.3457 & 22.6572 & 0.6651 & 0.2726 & 22.6281 & 0.7039 & 0.2976  \\
+    %     DBC6s     & 27.1085  & 0.7625  & 0.1705 & 27.8752 & 0.8197  & 0.1332 & 28.027  & 0.7853  & 0.1472  & 25.7551 & 0.7407 & 0.2197 & 26.0462 & 0.7785 & 0.1846 & 26.8157 & 0.8328 & 0.163  \\
+    %     DBC6      & 27.083   & 0.7622  & 0.1707 & 27.9227 & 0.8233  & 0.1322 & 28.0362 & 0.7877  & 0.1453  & 25.8831 & 0.7453 & 0.2163 & 26.0767 & 0.775  & 0.1848 & 26.8316 & 0.8295  & 0.1693   \\
+    %     DBC6M     & \textbf{28.271}   & \textbf{0.7828}  & \textbf{0.1464} & \textbf{28.9463} & \textbf{0.8432}  & \textbf{0.1134} & \textbf{28.7504} & \textbf{0.8018}  & \textbf{0.1326}  & \textbf{26.8738} & \textbf{0.7626} & \textbf{0.1942} & \textbf{26.8452} & \textbf{0.8048} & \textbf{0.161} & \textbf{28.2355} & \textbf{0.8549} & \textbf{0.1394}  \\
+    %     \midrule
+    %     BC7       & 23.0234  & 0.6685  & 0.2606 & 25.0525 & 0.6602  & 0.2262 & 25.0392 & 0.7163  & 0.2338  & 22.45   & 0.6358 & 0.3009 & 21.4505 & 0.6852 & 0.2457 & 22.2064 & 0.7357 & 0.2971   \\
+    %     DBC7s     & 30.2512  & 0.8221  & 0.1087 & 30.602  & 0.8683  & 0.0919 & 30.8006 & 0.8338  & 0.1068  & 29.6132 & 0.8223 & 0.1378 & 29.5706 & 0.8618 & 0.0949 & 31.8172 & 0.9084 & 0.0986  \\
+    %     DBC7      & 30.534   & 0.8277  & 0.1018 & 30.8209 & 0.8736  & 0.0871 & 31.154  & 0.8412  & 0.0998  & 29.9245 & 0.8303 & 0.1304 & 29.7846 & 0.8666 & 0.0905 & 32.2309 & 0.9156 & 0.0893   \\
+    %     DBC7M     & \textbf{30.633}   & \textbf{0.8304}  & \textbf{0.0966} & \textbf{31.4472} & \textbf{0.8917}  & \textbf{0.0761} & \textbf{31.2531} & \textbf{0.844}   & \textbf{0.096}   & \textbf{30.0176} & \textbf{0.8314} & \textbf{0.1273} & \textbf{29.9894} & \textbf{0.8709} & \textbf{0.0865} & \textbf{33.6313} & \textbf{0.9326} & \textbf{0.0752}  \\
+    %     \bottomrule
+    % \end{tabular} 
+\begin{tabular}{cccccccccc}
+    \toprule
+    材质名称   & 评价指标 & BC6 & DBC6s & DBC6 & DBC6M & BC7 & DBC7s & DBC7 & DBC7M \\
+    \midrule
+    \multirow{3}{*}{Ukulele\_01}         &PSNR(↑) & 22.3005 & 27.1085 & 27.083 & \textbf{28.271} & 23.0234 & 30.2512 & 30.534 & \textbf{30.633} \\
+                                         &SSIM(↑) & 0.6716 & 0.7625 & 0.7622 & \textbf{0.7828} & 0.6685 & 0.8221 & 0.8277 & \textbf{0.8304} \\
+                                         &FLIP(↓) & 0.2713 & 0.1705 & 0.1707 & \textbf{0.1464} & 0.2606 & 0.1087 & 0.1018 & \textbf{0.0966} \\
+    \midrule
+    \multirow{3}{*}{antique\_katana\_01} &PSNR(↑) & 24.1197 & 27.8752 & 27.9227 & \textbf{28.9463} & 25.0525 & 30.602 & 30.8209 & \textbf{31.4472} \\
+                                         &SSIM(↑) & 0.7007 & 0.8197 & 0.8233 & \textbf{0.8432} & 0.6602 & 0.8683 & 0.8736 & \textbf{0.8917} \\
+                                         &FLIP(↓) & 0.2161 & 0.1332 & 0.1322 & \textbf{0.1134} & 0.2262 & 0.0919 & 0.0871 & \textbf{0.0761} \\
+    \midrule
+    \multirow{3}{*}{utility\_box\_02}    &PSNR(↑) & 23.8151 & 28.027 & 28.0362 & \textbf{28.7504} & 25.0392 & 30.8006 & 31.154 & \textbf{31.2531} \\
+                                         &SSIM(↑) & 0.6977 & 0.7853 & 0.7877 & \textbf{0.8018} & 0.7163 & 0.8338 & 0.8412 & \textbf{0.844} \\
+                                         &FLIP(↓) & 0.2341 & 0.1472 & 0.1453 & \textbf{0.1326} & 0.2338 & 0.1068 & 0.0998 & \textbf{0.096} \\
+    \midrule
+    \multirow{3}{*}{chinese\_chandelier} &PSNR(↑) & 20.1739 & 25.7551 & 25.8831 & \textbf{26.8738} & 22.45 & 29.6132 & 29.9245 & \textbf{30.0176} \\
+                                         &SSIM(↑) & 0.604 & 0.7407 & 0.7453 & \textbf{0.7626} & 0.6358 & 0.8223 & 0.8303 & \textbf{0.8314} \\
+                                         &FLIP(↓) & 0.3457 & 0.2197 & 0.2163 & \textbf{0.1942} & 0.3009 & 0.1378 & 0.1304 & \textbf{0.1273} \\
+    \midrule
+    \multirow{3}{*}{lubricant\_spray}    &PSNR(↑) & 22.6572 & 26.0462 & 26.0767 & \textbf{26.8452} & 21.4505 & 29.5706 & 29.7846 & \textbf{29.9894} \\
+                                         &SSIM(↑) & 0.6651 & 0.7785 & 0.775 & \textbf{0.8048} & 0.6852 & 0.8618 & 0.8666 & \textbf{0.8709} \\
+                                         &FLIP(↓) & 0.2726 & 0.1846 & 0.1848 & \textbf{0.161} & 0.2457 & 0.0949 & 0.0905 & \textbf{0.0865} \\
+    \midrule
+    \multirow{3}{*}{Drill\_01}           &PSNR(↑) & 22.6281 & 26.8157 & 26.8316 & \textbf{28.2355} & 22.2064 & 31.8172 & 32.2309 & \textbf{33.6313} \\
+                                         &SSIM(↑) & 0.7039 & 0.8328 & 0.8295 & \textbf{0.8549} & 0.7357 & 0.9084 & 0.9156 & \textbf{0.9326} \\
+                                         &FLIP(↓) & 0.2976 & 0.163 & 0.1693 & \textbf{0.1394} & 0.2971 & 0.0986 & 0.0893 & \textbf{0.0752} \\
+    \bottomrule
+\end{tabular}
+
+}   
 \end{table*}
 
 MBD实验的结果如表\ref{MBDexp1}所示，
@@ -416,22 +447,40 @@ MBD实验的结果如表\ref{MBDexp1}所示，
 实验结果证明向MBD中加入DBC7M模型并进行联合优化有效降低
 了对MBD的插值系数进行BC7格式压缩造成的光照数据重建损失
 
-\begin{table*}[htbp]
+\begin{table*}[t]
     \centering
     \caption{5个烘焙的场景光照数据上进行的对比实验结果}
     \label{MBDexp1}        
     \resizebox{\linewidth}{!}{
-    \begin{tabular}{lllllllllll}
+    % \begin{tabular}{lllllllllll}
+    %     \toprule
+    %                 & \multicolumn{2}{l}{Cornell Box} & \multicolumn{2}{l}{Scene 0} & \multicolumn{2}{l}{Scene 1} & \multicolumn{2}{l}{Scene 2} & \multicolumn{2}{l}{Scene 3} \\
+    %                 & RMSE       & Memory Size / KB   & RMSE     & Memory Size / KB & RMSE     & Memory Size / MB & RMSE     & Memory Size / MB & RMSE     & Memory Size / MB \\
+    %     \midrule
+    % MBD + BC7       & 0.427069   & 4                  & 0.312421 & 96.25            & 0.462323 & 0.29             & 0.141934 & 0.38             & 0.415555 & 1.24             \\
+    % MBD + DBC7M     & 0.183869   & 4                  & 0.150063 & 96.25            & 0.292717 & 0.29             & 0.114637 & 0.38             & 0.376664 & 1.24             \\
+    % MBD             & 0.078967   & 16                 & 0.042723 & 385              & 0.071571 & 1.15             & 0.065373 & 1.53             & 0.198106 & 4.96             \\
+    % Reference       & -          & 432                & -        & 4,620            & -        & 14.13            & -        & 18.47            & -        & 59.55           \\
+    %     \bottomrule
+    % \end{tabular} 
+    \begin{tabular}{llllll}
         \toprule
-                    & \multicolumn{2}{l}{Cornell Box} & \multicolumn{2}{l}{Scene 0} & \multicolumn{2}{l}{Scene 1} & \multicolumn{2}{l}{Scene 2} & \multicolumn{2}{l}{Scene 3} \\
-                    & RMSE       & Memory Size / KB   & RMSE     & Memory Size / KB & RMSE     & Memory Size / MB & RMSE     & Memory Size / MB & RMSE     & Memory Size / MB \\
+        场景名称 &评价指标 & MBD + BC7 & MBD + DBC7M & MBD & Reference \\
         \midrule
-    MBD + BC7       & 0.427069   & 4                  & 0.312421 & 96.25            & 0.462323 & 0.29             & 0.141934 & 0.38             & 0.415555 & 1.24             \\
-    MBD + DBC7M     & 0.183869   & 4                  & 0.150063 & 96.25            & 0.292717 & 0.29             & 0.114637 & 0.38             & 0.376664 & 1.24             \\
-    MBD             & 0.078967   & 16                 & 0.042723 & 385              & 0.071571 & 1.15             & 0.065373 & 1.53             & 0.198106 & 4.96             \\
-    Reference       & -          & 432                & -        & 4,620            & -        & 14.13            & -        & 18.47            & -        & 59.55           \\
-\bottomrule
-\end{tabular} }   
+        \multirow{2}{*}{Cornell Box} & RMSE & 0.427069 & 0.183869 & 0.078967 & - \\
+                                     & Memory Size / KB & 4 & 4 & 16 & 432 \\
+        \multirow{2}{*}{Scene 0}     & RMSE & 0.312421 & 0.150063 & 0.042723 & - \\
+                                     & Memory Size / KB & 96.25 & 96.25 & 385 & 4620 \\
+        \multirow{2}{*}{Scene 1}     & RMSE & 0.462323 & 0.292717 & 0.071571 & - \\
+                                     & Memory Size / MB & 0.29 & 0.29 & 1.15 & 14.13 \\
+        \multirow{2}{*}{Scene 2}     & RMSE & 0.141934 & 0.114637 & 0.065373 & - \\
+                                     & Memory Size / MB & 0.38 & 0.38 & 1.53 & 18.47 \\
+        \multirow{2}{*}{Scene 3}     & RMSE & 0.415555 & 0.376664 & 0.198106 & - \\
+                                     & Memory Size / MB & 1.24 & 1.24 & 4.96 & 59.55 \\
+        \bottomrule
+    \end{tabular}
+
+}   
 \end{table*}
 
 \begin{figure*}[htbp]
@@ -516,7 +565,7 @@ DBCM模型由于使用了较少的分区配置数，
     \centering
     \caption{6个材质的纹理集上进行的性能测试结果}
     \label{4:6个材质的纹理集上进行的性能实验}        
-    \resizebox{0.75\linewidth}{!}{
+    \resizebox{1\linewidth}{!}{
     \begin{tabular}{ccccccccccccccccccc}
         \toprule
                                     & BC6 & DBC6s & DBC6 &DBC6M& BC7  & DBC7s & DBC7 &DBC7M\\

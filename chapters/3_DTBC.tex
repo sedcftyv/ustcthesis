@@ -464,6 +464,57 @@ DBC6/DBC7模型每次迭代过程中，对每4\times4块会穷举所有的编码
 两个使用固定配置的DBC模型(DBC6s/DBC7s)相比BC6/BC7取得了更好的结果,
 证明向神经压缩模型加入DBC模型并进行联合优化有效降低了神经纹理经过DXT格式压缩造成的纹理集的重建损失。
 
+\begin{table*}[htbp]
+    \centering
+    \caption{6个材质的纹理集上进行的对比实验结果}
+    \label{3:6个材质的纹理集上进行的对比实验}        
+    \resizebox{\linewidth}{!}{
+    % \begin{tabular}{ccccccccccccccccccc}
+    %     \toprule
+    %     & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{lubricant\_spray} & \multicolumn{3}{c}{Drill\_01}\\
+    %               & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓) & PSNR(↑)& SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
+    %               \midrule
+    %               BC6       & 22.3005  & 0.6716  & 0.2713 & 24.1197 & 0.7007  & 0.2161 & 23.8151 & 0.6977  & 0.2341  & 20.1739 & 0.604  & 0.3457 & 22.6572 & 0.6651 & 0.2726 & 22.6281 & 0.7039 & 0.2976  \\
+    %               DBC6s     & \textbf{27.1085}  & \textbf{0.7625}  & \textbf{0.1705} & 27.8752 & 0.8197  & 0.1332 & 28.027  & 0.7853  & 0.1472  & 25.7551 & 0.7407 & 0.2197 & 26.0462 & 0.7785 & 0.1846 & 26.8157 & 0.8328 & 0.163  \\
+    %               DBC6      & 27.083   & 0.7622  & 0.1707 & \textbf{27.9227} & \textbf{0.8233}  & \textbf{0.1322} & \textbf{28.0362} & \textbf{0.7877}  & \textbf{0.1453}  & \textbf{25.8831} & \textbf{0.7453} & \textbf{0.2163} & \textbf{26.0767} & \textbf{0.775}  & \textbf{0.1848} & \textbf{26.8316} & \textbf{0.8295}  & \textbf{0.1693}   \\
+    %               \midrule
+    %               BC7       & 23.0234  & 0.6685  & 0.2606 & 25.0525 & 0.6602  & 0.2262 & 25.0392 & 0.7163  & 0.2338  & 22.45   & 0.6358 & 0.3009 & 21.4505 & 0.6852 & 0.2457 & 22.2064 & 0.7357 & 0.2971   \\
+    %               DBC7s     & 30.2512  & 0.8221  & 0.1087 & 30.602  & 0.8683  & 0.0919 & 30.8006 & 0.8338  & 0.1068  & 29.6132 & 0.8223 & 0.1378 & 29.5706 & 0.8618 & 0.0949 & 31.8172 & 0.9084 & 0.0986  \\
+    %               DBC7      & \textbf{30.534}   & \textbf{0.8277}  & \textbf{0.1018} & \textbf{30.8209} & \textbf{0.8736}  & \textbf{0.0871} & \textbf{31.154}  & \textbf{0.8412}  & \textbf{0.0998}  & \textbf{29.9245} & \textbf{0.8303} & \textbf{0.1304} & \textbf{29.7846} & \textbf{0.8666} & \textbf{0.0905} & \textbf{32.2309} & \textbf{0.9156} & \textbf{0.0893}   \\
+    %     \bottomrule
+    % \end{tabular} 
+\begin{tabular}{cccccccc}
+        \toprule
+        材质名称                         &    评价指标     & BC6 & DBC6s & DBC6 & BC7 & DBC7s & DBC7 \\
+        \midrule
+        \multirow{3}{*}{Ukulele\_01}         & PSNR(↑) & 22.3005 & \textbf{27.1085} & 27.083 & 23.0234 & 30.2512 & \textbf{30.534} \\
+                                             & SSIM(↑) & 0.6716 & \textbf{0.7625} & 0.7622 & 0.6685 & 0.8221 & \textbf{0.8277} \\
+                                             & FLIP(↓) & 0.2713 & \textbf{0.1705} & 0.1707 & 0.2606 & 0.1087 & \textbf{0.1018} \\
+        \midrule
+        \multirow{3}{*}{antique\_katana\_01} & PSNR(↑) & 24.1197 & 27.8752 & \textbf{27.9227} & 25.0525 & 30.602 & \textbf{30.8209} \\
+                                             & SSIM(↑) & 0.7007 & 0.8197 & \textbf{0.8233} & 0.6602 & 0.8683 & \textbf{0.8736} \\
+                                             & FLIP(↓) & 0.2161 & 0.1332 & \textbf{0.1322} & 0.2262 & 0.0919 & \textbf{0.0871} \\
+        \midrule
+        \multirow{3}{*}{utility\_box\_02}    & PSNR(↑) & 23.8151 & 28.027 & \textbf{28.0362} & 25.0392 & 30.8006 & \textbf{31.154} \\
+                                             & SSIM(↑) & 0.6977 & 0.7853 & \textbf{0.7877} & 0.7163 & 0.8338 & \textbf{0.8412} \\
+                                             & FLIP(↓) & 0.2341 & 0.1472 & \textbf{0.1453} & 0.2338 & 0.1068 & \textbf{0.0998} \\
+        \midrule
+        \multirow{3}{*}{chinese\_chandelier}    & PSNR(↑) & 20.1739 & 25.7551 & \textbf{25.8831} & 22.45 & 29.6132 & \textbf{29.9245} \\
+                                                & SSIM(↑) & 0.604 & 0.7407 & \textbf{0.7453} & 0.6358 & 0.8223 & \textbf{0.8303} \\
+                                                & FLIP(↓) & 0.3457 & 0.2197 & \textbf{0.2163} & 0.3009 & 0.1378 & \textbf{0.1304} \\
+        \midrule
+        \multirow{3}{*}{lubricant\_spray}    & PSNR(↑) & 22.6572 & 26.0462 & \textbf{26.0767} & 21.4505 & 29.5706 & \textbf{29.7846} \\
+                                             & SSIM(↑) & 0.6651 & 0.7785 & \textbf{0.775} &0.6852 & 0.8618 & \textbf{0.8666} \\
+                                             & FLIP(↓) & 0.2726 & 0.1846 & \textbf{0.1848} & 0.2457 & 0.0949 & \textbf{0.0905} \\
+        \midrule
+        \multirow{3}{*}{Drill\_01}           & PSNR(↑) & 22.6281 & 26.8157 & \textbf{26.8316} & 22.2064 & 31.8172 & \textbf{32.2309} \\
+                                             & SSIM(↑) & 0.7039 & 0.8328 & \textbf{0.8295} & 0.7357 & 0.9084 & \textbf{0.9156} \\
+                                             & FLIP(↓) & 0.2976 & 0.163 & \textbf{0.1693} & 0.2971 & 0.0986 & \textbf{0.0893} \\
+        \bottomrule
+    \end{tabular}    
+}   
+\end{table*}
+
 大部分实验中，每次迭代穷举所有编码配置的DBC模型(DBC6/DBC7)相比固定配置的DBC6s/DBC7s取得了更好的结果。
 证明DBC模型支持编码配置动态选择的编解码器框架与固定编码配置的仅解码框架相比具有更好的编码质量，
 同时更加接近标准的DXT编解码器，因此对神经纹理的优化效果更好。
@@ -482,27 +533,6 @@ BC7的相关方法(BC7/DBC7s/DBC7)相较于BC6的相关方法(BC6/DBC6s/DBC6)取
 仅对权重进行了模拟量化，因此与标准的BC6编解码器会有一定差异，导致对神经纹理的优化效果弱于BC7。
 % LDR格式BC7的相关方法(BC7/DBC7s/DBC7)与HDR格式BC6的相关方法(BC6/DBC6s/DBC6)的对比结果
 % 也证明通过范围约束损失使得浮点形式的神经纹理可以使用LDR格式压缩的有效性。
-
-\begin{table*}[htbp]
-    \centering
-    \caption{6个材质的纹理集上进行的对比实验结果}
-    \label{3:6个材质的纹理集上进行的对比实验}        
-    \resizebox{\linewidth}{!}{
-    \begin{tabular}{ccccccccccccccccccc}
-        \toprule
-        & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{lubricant\_spray} & \multicolumn{3}{c}{Drill\_01}\\
-                  & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓) & PSNR(↑)& SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
-                  \midrule
-                  BC6       & 22.3005  & 0.6716  & 0.2713 & 24.1197 & 0.7007  & 0.2161 & 23.8151 & 0.6977  & 0.2341  & 20.1739 & 0.604  & 0.3457 & 22.6572 & 0.6651 & 0.2726 & 22.6281 & 0.7039 & 0.2976  \\
-                  DBC6s     & \textbf{27.1085}  & \textbf{0.7625}  & \textbf{0.1705} & 27.8752 & 0.8197  & 0.1332 & 28.027  & 0.7853  & 0.1472  & 25.7551 & 0.7407 & 0.2197 & 26.0462 & 0.7785 & 0.1846 & 26.8157 & 0.8328 & 0.163  \\
-                  DBC6      & 27.083   & 0.7622  & 0.1707 & \textbf{27.9227} & \textbf{0.8233}  & \textbf{0.1322} & \textbf{28.0362} & \textbf{0.7877}  & \textbf{0.1453}  & \textbf{25.8831} & \textbf{0.7453} & \textbf{0.2163} & \textbf{26.0767} & \textbf{0.775}  & \textbf{0.1848} & \textbf{26.8316} & \textbf{0.8295}  & \textbf{0.1693}   \\
-                  \midrule
-                  BC7       & 23.0234  & 0.6685  & 0.2606 & 25.0525 & 0.6602  & 0.2262 & 25.0392 & 0.7163  & 0.2338  & 22.45   & 0.6358 & 0.3009 & 21.4505 & 0.6852 & 0.2457 & 22.2064 & 0.7357 & 0.2971   \\
-                  DBC7s     & 30.2512  & 0.8221  & 0.1087 & 30.602  & 0.8683  & 0.0919 & 30.8006 & 0.8338  & 0.1068  & 29.6132 & 0.8223 & 0.1378 & 29.5706 & 0.8618 & 0.0949 & 31.8172 & 0.9084 & 0.0986  \\
-                  DBC7      & \textbf{30.534}   & \textbf{0.8277}  & \textbf{0.1018} & \textbf{30.8209} & \textbf{0.8736}  & \textbf{0.0871} & \textbf{31.154}  & \textbf{0.8412}  & \textbf{0.0998}  & \textbf{29.9245} & \textbf{0.8303} & \textbf{0.1304} & \textbf{29.7846} & \textbf{0.8666} & \textbf{0.0905} & \textbf{32.2309} & \textbf{0.9156} & \textbf{0.0893}   \\
-        \bottomrule
-\end{tabular} }   
-\end{table*}
 
 \begin{figure}[htbp]
     \centering
@@ -591,31 +621,61 @@ STE\cite{bengio2013estimating}近似舍入函数的梯度。
 \end{itemize}
 模型其余参数保持不变，具体实验结果如表\ref{3:6个材质的纹理集上进行的消融实验}所示。
 
-\begin{table*}[htbp]
-    \centering
-    \caption{6个材质的纹理集上进行的消融实验结果}
-    \label{3:6个材质的纹理集上进行的消融实验}        
-    \resizebox{\linewidth}{!}{
-    \begin{tabular}{ccccccccccccccccccc}
-        \toprule
-        & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{lubricant\_spray} & \multicolumn{3}{c}{Drill\_01}\\
-                               & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
-        \midrule
-        DBC7s w/o $L_{clamp}$  & 28.6012  & 0.7932  & 0.1393 & 29.1323 & 0.8000 & 0.1295 & 29.4279 & 0.8041 & 0.1355 & 27.5207 & 0.7758 & 0.1748 & 28.4018 & 0.8405 & 0.1153 & 28.9067 & 0.8469 & 0.1489  \\
-        DBC7s w/o STE          & 28.8298  & 0.7949  & 0.1373 & 29.4041 & 0.8098 & 0.1230 & 29.6283 & 0.8100 & 0.1310 & 27.7152 & 0.7818 & 0.1702 & 26.8598 & 0.8098 & 0.1396 & 29.2267 & 0.8580 & 0.1438  \\
-        DBC7s                  & \textbf{30.2512}  & \textbf{0.8221}  & \textbf{0.1087} & \textbf{30.602}  & \textbf{0.8683}  & \textbf{0.0919} & \textbf{30.8006} & \textbf{0.8338}  & \textbf{0.1068}  & \textbf{29.6132} & \textbf{0.8223} & \textbf{0.1378} & \textbf{29.5706} & \textbf{0.8618} & \textbf{0.0949} & \textbf{31.8172} & \textbf{0.9084} & \textbf{0.0986}  \\        
-        \midrule
-        DBC6s w/o STE          & 25.1120  & 0.7283  & 0.2027 & 25.8527 & 0.7740 & 0.1647 & 25.6907 & 0.7515 & 0.1815 & 23.2535 & 0.6880 & 0.2678 & 24.1332 & 0.7084 & 0.2318 & 24.4736 & 0.7804 & 0.2131 \\
-        DBC6s                  & \textbf{27.1085}  & \textbf{0.7625}  & \textbf{0.1705} & \textbf{27.8752} & \textbf{0.8197}  & \textbf{0.1332} & \textbf{28.027}  & \textbf{0.7853}  & \textbf{0.1472}  & \textbf{25.7551} & \textbf{0.7407} & \textbf{0.2197} & \textbf{26.0462} & \textbf{0.7785} & \textbf{0.1846} & \textbf{26.8157} & \textbf{0.8328} & \textbf{0.163}  \\
-        \bottomrule
-\end{tabular} }   
-\end{table*}
-
 从消融实验结果中可以观察到在6个材质的纹理数据集上，
 无论是删除范围约束损失，
 还是模拟量化，
 DBC6s/DBC7s的性能都明显下降，这验证了本章提出的DBC模型中
 模拟量化和范围约束损失的必要性。
+
+\begin{table*}[t]
+    \centering
+    \caption{6个材质的纹理集上进行的消融实验结果}
+    \label{3:6个材质的纹理集上进行的消融实验}        
+    \resizebox{\linewidth}{!}{
+    % \begin{tabular}{ccccccccccccccccccc}
+    %     \toprule
+    %     & \multicolumn{3}{c}{Ukulele\_01} & \multicolumn{3}{c}{antique\_katana\_01} & \multicolumn{3}{c}{utility\_box\_02} & \multicolumn{3}{c}{chinese\_chandelier} & \multicolumn{3}{c}{lubricant\_spray} & \multicolumn{3}{c}{Drill\_01}\\
+    %                            & PSNR(↑)  & SSIM(↑) & FLIP(↓)& PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑) & FLIP(↓) & PSNR(↑) & SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)& PSNR(↑) & SSIM(↑)& FLIP(↓)\\
+    %     \midrule
+    %     DBC7s w/o $L_{clamp}$  & 28.6012  & 0.7932  & 0.1393 & 29.1323 & 0.8000 & 0.1295 & 29.4279 & 0.8041 & 0.1355 & 27.5207 & 0.7758 & 0.1748 & 28.4018 & 0.8405 & 0.1153 & 28.9067 & 0.8469 & 0.1489  \\
+    %     DBC7s w/o STE          & 28.8298  & 0.7949  & 0.1373 & 29.4041 & 0.8098 & 0.1230 & 29.6283 & 0.8100 & 0.1310 & 27.7152 & 0.7818 & 0.1702 & 26.8598 & 0.8098 & 0.1396 & 29.2267 & 0.8580 & 0.1438  \\
+    %     DBC7s                  & \textbf{30.2512}  & \textbf{0.8221}  & \textbf{0.1087} & \textbf{30.602}  & \textbf{0.8683}  & \textbf{0.0919} & \textbf{30.8006} & \textbf{0.8338}  & \textbf{0.1068}  & \textbf{29.6132} & \textbf{0.8223} & \textbf{0.1378} & \textbf{29.5706} & \textbf{0.8618} & \textbf{0.0949} & \textbf{31.8172} & \textbf{0.9084} & \textbf{0.0986}  \\        
+    %     \midrule
+    %     DBC6s w/o STE          & 25.1120  & 0.7283  & 0.2027 & 25.8527 & 0.7740 & 0.1647 & 25.6907 & 0.7515 & 0.1815 & 23.2535 & 0.6880 & 0.2678 & 24.1332 & 0.7084 & 0.2318 & 24.4736 & 0.7804 & 0.2131 \\
+    %     DBC6s                  & \textbf{27.1085}  & \textbf{0.7625}  & \textbf{0.1705} & \textbf{27.8752} & \textbf{0.8197}  & \textbf{0.1332} & \textbf{28.027}  & \textbf{0.7853}  & \textbf{0.1472}  & \textbf{25.7551} & \textbf{0.7407} & \textbf{0.2197} & \textbf{26.0462} & \textbf{0.7785} & \textbf{0.1846} & \textbf{26.8157} & \textbf{0.8328} & \textbf{0.163}  \\
+    %     \bottomrule
+    % \end{tabular} 
+    \begin{tabular}{ccccccc}
+        \toprule
+        材质名称 & 评价指标 & \makecell{DBC7s \\ w/o $L_{clamp}$} & \makecell{DBC7s \\ w/o STE} & DBC7s & \makecell{DBC6s \\w/o STE} & DBC6s \\
+        \midrule
+        \multirow{3}{*}{Ukulele\_01}         & PSNR(↑) & 28.6012 & 28.8298 & \textbf{30.2512} & 25.1120 & \textbf{27.1085} \\
+                                             & SSIM(↑) & 0.7932 & 0.7949 & \textbf{0.8221} & 0.7283 & \textbf{0.7625} \\
+                                             & FLIP(↓) & 0.1393 & 0.1373 & \textbf{0.1087} & 0.2027 & \textbf{0.1705} \\
+        \midrule
+        \multirow{3}{*}{antique\_katana\_01} & PSNR(↑) & 29.1323 & 29.4041 & \textbf{30.602} & 25.8527 & \textbf{27.8752} \\
+                                             & SSIM(↑) & 0.8000 & 0.8098 & \textbf{0.8683} & 0.7740 & \textbf{0.8197} \\
+                                             & FLIP(↓) & 0.1295 & 0.1230 & \textbf{0.0919} & 0.1647 & \textbf{0.1332} \\
+        \midrule
+        \multirow{3}{*}{utility\_box\_02}    & PSNR(↑) & 29.4279 & 29.6283 & \textbf{30.8006} & 25.6907 & \textbf{28.027} \\
+                                             & SSIM(↑) & 0.8041 & 0.8100 & \textbf{0.8338} & 0.7515 & \textbf{0.7853} \\
+                                             & FLIP(↓) & 0.1355 & 0.1310 & \textbf{0.1068} & 0.1815 & \textbf{0.1472} \\
+        \midrule
+        \multirow{3}{*}{chinese\_chandelier} & PSNR(↑) & 27.5207 & 27.7152 & \textbf{29.6132} & 23.2535 & \textbf{25.7551} \\
+                                             & SSIM(↑) & 0.7758 & 0.7818 & \textbf{0.8223} & 0.6880 & \textbf{0.7407} \\
+                                             & FLIP(↓) & 0.1748 & 0.1702 & \textbf{0.1378} & 0.2678 & \textbf{0.2197} \\
+        \midrule
+        \multirow{3}{*}{lubricant\_spray}    & PSNR(↑) & 28.4018 & 26.8598 & \textbf{29.5706} & 24.1332 & \textbf{26.0462} \\
+                                             & SSIM(↑) & 0.8405 & 0.8098 & \textbf{0.8618} & 0.7084 & \textbf{0.7785} \\
+                                             & FLIP(↓) & 0.1153 & 0.1396 & \textbf{0.0949} & 0.2318 & \textbf{0.1846} \\
+        \midrule
+        \multirow{3}{*}{Drill\_01}           & PSNR(↑) & 28.9067 & 29.2267 & \textbf{31.8172} & 24.4736 & \textbf{26.8157} \\
+                                             & SSIM(↑) & 0.8469 & 0.8580 & \textbf{0.9084} & 0.7804 & \textbf{0.8328} \\
+                                             & FLIP(↓) & 0.1489 & 0.1438 & \textbf{0.0986} & 0.2131 & \textbf{0.163} \\
+        \bottomrule
+    \end{tabular}
+}   
+\end{table*}
 
 \section{本章小结}
 
@@ -630,7 +690,6 @@ DBC6s/DBC7s的性能都明显下降，这验证了本章提出的DBC模型中
 编码配置选择器的设计以及范围约束损失。
 最后在神经压缩模型中对本章所提出的方法进行测试，
 以证明所提出的方法的有效性。
-
 
 
 
