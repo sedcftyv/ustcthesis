@@ -24,8 +24,8 @@ BC1格式是DXT中最基础的块压缩格式，如图\ref{fig:BlockCompression}
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.75\textwidth]{figures/BlockCompression.png}
-    \caption{块压缩示例（第一个块显示了标记为 a到p 的 16 个纹素）\cite{BC1-5}}
+    \includegraphics[width=0.75\textwidth]{figures/BC0.pdf}
+    \caption{块压缩示例（第一个块显示了标记为0到15的 16 个纹素）\cite{BC1-5}}
     \label{fig:BlockCompression}
 \end{figure}
 
@@ -39,7 +39,7 @@ BC1首先将纹理划分成4\times4大小的纹素块，
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.75\textwidth]{figures/BC1.png}
+    \includegraphics[width=0.75\textwidth]{figures/BC1.pdf}
     \caption{BC1格式中每个块的数据布局\cite{BC1-5}}
     \label{fig:BC1}
 \end{figure}
@@ -66,7 +66,7 @@ DXT格式中的所有子格式(BC1-BC7)纹理解压缩时都具有相同的颜�
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.75\textwidth]{figures/LinearInterpolate.pdf}
+    \includegraphics[width=0.75\textwidth]{figures/gradient-1p.pdf}
     \caption{颜色端点的线性插值\cite{ASTC}}
     \label{fig:LinearInterpolate}
 \end{figure}
@@ -77,7 +77,7 @@ BC2格式增加了对Alpha通道的支持，如图\ref{fig:BC2}所示，在BC1�
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.7\textwidth]{figures/BC2.png}
+    \includegraphics[width=0.7\textwidth]{figures/BC2.pdf}
     \caption{BC2格式中每个块的数据布局\cite{BC1-5}}
     \label{fig:BC2}
 \end{figure}    
@@ -88,7 +88,7 @@ BC3格式同样支持Alpha通道，如图\ref{fig:BC3}所示，其RGB通道的�
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.7\textwidth]{figures/BC3.png}
+    \includegraphics[width=0.9\textwidth]{figures/BC3.pdf}
     \caption{BC3格式中每个块的数据布局\cite{BC1-5}}
     \label{fig:BC3}
 \end{figure}
@@ -99,7 +99,7 @@ BC4格式用于存储单通道的颜色数据，如图\ref{fig:BC4}所示，BC4�
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=1\textwidth]{figures/BC4.png}
+    \includegraphics[width=1\textwidth]{figures/BC4.pdf}
     \caption{BC4格式中每个块的数据布局\cite{BC1-5}}
     \label{fig:BC4}
 \end{figure}
@@ -110,7 +110,7 @@ BC5格式用于存储双通道的颜色数据，可以视为双通道版本的BC
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=1\textwidth]{figures/BC5.png}
+    \includegraphics[width=1\textwidth]{figures/BC5.pdf}
     \caption{BC5格式中每个块的数据布局\cite{BC1-5}}
     \label{fig:BC5}
 \end{figure}
@@ -129,7 +129,7 @@ BC6共包括32种不同的分区，编码时编码器会根据编码误差选择
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=1\textwidth]{figures/2-Partition.pdf}
+    \includegraphics[width=1\textwidth]{figures/gradient-2p.pdf}
     \caption{BC6格式的双分区布局\cite{ASTC}}
     \label{fig:2-Partition}
 \end{figure}
@@ -293,7 +293,7 @@ DXT格式将纹理以颜色端点和权重的形式量化存储，
 
 \section{混合专家模型}
 
-混合专家模型(Mixture of Experts，MoE)最早由 Jacobs 等\cite{jacobs1991adaptive}提出，
+混合专家模型(Mixture of Experts, MoE)最早由 Jacobs 等\cite{jacobs1991adaptive}提出，
 如图\ref{fig:MoE}所示，MoE通过结合多个不同的专家网络和一个门控网络来决定哪些专家应参与计算，从而有效减少训练数据中不同子任务之间的干扰，
 进而提升模型的学习速度和泛化能力。在 MoE 中，每个专家需生成完整的输出向量，而非对各专家的输出进行线性混合。
 这一特性与纹理压缩中的编码过程相符，
