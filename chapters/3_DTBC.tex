@@ -84,12 +84,12 @@ BC7同时支持3通道与4通道纹理，共具有8种不同模式，前4种模�
 
 \subsection{整体框架}
 
-将压缩前的原始纹理定义为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
-压缩后的纹理定义为$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$，
+将压缩前的原始纹理定义为$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$，
+压缩后的纹理定义为$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$，
 其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。
 DXT格式编解码器的框架可以使用如下形式表示：
 \begin{equation}
-    \mathbf{T}=\text{ConfigSelector}(\text{Decoder}(\text{Encoder}(\mathbf{T}')))
+    \mathbf{T}'=\text{ConfigSelector}(\text{Decoder}(\text{Encoder}(\mathbf{T})))
 \end{equation}
 其中Encoder表示编码器，Decoder表示解码器，ConfigSelector表示编码配置选择器。编码器首先将纹理分为4\times4大小的纹理块，
 然后对于每个纹理块，使用不同的编码配置进行编码，每个编码配置经过解码器解码得到对应的纹理，
@@ -134,6 +134,27 @@ DBC模型的整体框架如图\ref{fig:DBC_overview}所示，
 范围损失，从而对神经纹理的值范围进行约束。
 对于支持HDR纹理的BC6格式不需要加入范围损失。
 
+DBC模型的伪代码如下：
+
+\begin{algorithm}[H]
+    \caption{DBC模型}
+    \KwIn{原始纹理$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$，
+其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。}
+    \KwOut{经过可微DXT编解码的纹理$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$。}
+    $\mathbf{T}' \gets \emptyset$ \;
+    \For{each 4x4 block $\mathbf{B}$ in $\mathbf{T}$}{
+        $//$从编码配置集$\mathcal{I}$中遍历每种编码配置$i$
+
+        $\mathbf{B}' \gets \emptyset$ \;
+        \For{each $i$ in $\mathcal{I}$}{
+        $\mathbf{B}'_i \gets Decoder(Encoder(\mathbf{B},i))$\;
+        $\mathbf{B}' \gets \mathbf{B}'\cup \mathbf{B}'_i$\;
+        }
+        $\mathbf{B}'_{i^*} \gets ConfigSelector(\mathbf{B}')$\;
+        $\mathbf{T}' \gets \mathbf{T}' \cup \mathbf{B}'_{i^*}$
+    }
+    \Return $\mathbf{T}'$
+\end{algorithm}
 
 \subsection{可微编解码器}
 
@@ -196,6 +217,45 @@ $\mathbf{e}_0\in\mathbb{R}^n$ 和 $\mathbf{e}_1\in\mathbb{R}^n$：
 \end{align}
 其中$\mathbf{v''}$表示颜色端点$\mathbf{e}_0$和$\mathbf{e}_1$构成的向量，
 $\mathbf{C}$表示纹素组的颜色矩阵。
+
+编码过程的伪代码如下：
+
+\begin{algorithm}[H]
+    \caption{DXT编码}
+    \KwIn{编码问题$P_{m,n}$中一组纹素的颜色组成的矩阵$\mathbf{C}\in\mathbb{R}^{m\times n}$，
+    其中 $m$ 表示该纹素组中的纹素个数，$n$ 表示每个纹素的通道数。}
+    \KwOut{颜色端点$\mathbf{e}_0\in\mathbb{R}^n$和$\mathbf{e}_1\in\mathbb{R}^n$以及插值权重$\mathbf{t}\in\mathbb{R}^m$}
+    
+    $\mathbf{C}_{\text{mean}} \gets \text{mean}(\mathbf{C})$; \hfill $//$计算颜色均值$\mathbf{C}_{\text{mean}}\in\mathbb{R}^{n}$
+    
+    % 第二步：中心化颜色矩阵
+    $\mathbf{C}_{\text{center}} \gets \mathbf{C} - \mathbf{C}_{\text{mean}}$; \hfill $//$中心化颜色矩阵$\mathbf{C}$
+    
+    % 第三步：进行奇异值分解 (SVD)
+    $ \mathbf{U}, \text{diag}(\mathbf{s}), \mathbf{V}^T \gets \text{SVD}(\mathbf{C}_{\text{center}})$; \hfill $//$对$\mathbf{C}_{\text{center}}$进行奇异值分解
+    
+    % 第四步：选择主方向
+    选择 $\mathbf{V}$ 中最大奇异值对应的奇异向量 $\mathbf{v} \in \mathbb{R}^{n}$作为颜色主方向\;
+    
+    % 第五步：归一化主方向
+    $\mathbf{v}' \gets \frac{\mathbf{v}}{\|\mathbf{v}\|}$; \hfill $//$归一化颜色主方向$\mathbf{v}$
+    
+    % 第六步：将中心化的颜色矩阵投影到主方向上
+    $\mathbf{l} \gets \mathbf{C}_{\text{center}} \cdot \mathbf{v}'$; \hfill $//$将中心化的颜色矩阵投影到主方向上
+    
+    % 第七步：找到颜色端点
+    $\mathbf{e}_0 \gets \mathbf{C}_{\text{mean}} + \mathbf{l}_{\text{min}} \mathbf{v}$; \hfill $//$取距离最远的两个投影点作为颜色端点
+
+    $\mathbf{e}_1 \gets \mathbf{C}_{\text{mean}} + \mathbf{l}_{\text{max}} \mathbf{v}$\;
+    
+    % 第八步：计算端点之间的方向向量
+    $\mathbf{v''} \gets \frac{\mathbf{e}_1 - \mathbf{e}_0}{\|\mathbf{e}_1 - \mathbf{e}_0\|}$; \hfill $//$计算颜色端点构成线段的方向向量
+    
+    % 第九步：计算每个纹素的权重
+    $\mathbf{t} \gets \frac{(\mathbf{C} - \mathbf{e}_0) \cdot \mathbf{v''}}{\|\mathbf{e}_1 - \mathbf{e}_0\|}$; \hfill $//$将颜色投影到线段上得到插值权重
+    
+    \Return $\mathbf{e}_0,\mathbf{e}_1,\mathbf{t}$\;
+\end{algorithm}
 
 解码器进行线性插值得到解压缩的纹素组 $\mathbf{C}'\in\mathbb{R}^{m\times n}$：
 \begin{equation}
