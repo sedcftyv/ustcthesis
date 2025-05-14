@@ -163,6 +163,37 @@ Gumbel配置选择器将Gumbel噪声乘温度项$\tau$，
 不再适用，因此类似模拟退火算法，在优化初期进行一定程度的探索，
 从而更好地搜索到每个块最佳的编码配置。
 
+DBCM模型的伪代码如下：
+
+\begin{algorithm}[htbp]
+    \caption{DBCM模型}
+    \KwIn{原始纹理$\mathbf{T}\in \mathbb{R}^{w\times h\times c}$，
+其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。
+分区配置的亲和度表$S$，稳定分区配置数$N_s$，随机分区配置数$N_r$。}
+    \KwOut{经过可微DXT编解码的纹理$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$。}
+    $\mathbf{T}' \gets \emptyset$ \;
+    \For{each 4x4 block $\mathbf{B}$ in $\mathbf{T}$}{
+        $\mathbf{B}' \gets \emptyset$ \;
+        $//$从分区配置集$\mathcal{I}$中选择$N_s+N_r$种激活的分区配置$\mathcal{I}^*$
+
+        $\mathcal{I}^*$ \gets MoP($\mathcal{I},S,N_s,N_r$)\;
+        \For{each $i$ in $\mathcal{I}^*$}{
+        $\mathbf{B}'_i \gets Decoder(Encoder(\mathbf{B},i))$\;
+        $\mathbf{B}' \gets \mathbf{B}'\cup \mathbf{B}'_i$\;
+        $S \gets \mathit{Update}(\mathbf{B}'_i,\mathbf{B})$; \hfill $//$更新亲和度表$S$
+        }
+        $//$从非分区编码配置集$\mathcal{I}'$中遍历每种编码配置$i$
+
+        \For{each $i$ in $\mathcal{I}'$}{
+            $\mathbf{B}'_i \gets Decoder(Encoder(\mathbf{B},i))$\;
+            $\mathbf{B}' \gets \mathbf{B}'\cup \mathbf{B}'_i$\;
+            }
+        $\mathbf{B}'_{i^*} \gets GumbelConfigSelector(\mathbf{B}')$\;
+        $\mathbf{T}' \gets \mathbf{T}' \cup \mathbf{B}'_{i^*}$
+    }
+    \Return $\mathbf{T}'$
+\end{algorithm}
+
 \section{实现细节}
 
 DeepSeekMoE\cite{dai2024deepseekmoe}中的
@@ -200,7 +231,7 @@ $\alpha$ 是滑动平均系数，固定为0.2，$\alpha$的作用是使得亲和
 选出亲和度最大的前$N_s$个分区配置作为稳定分区配置$\mathcal{I}_s$ ，即
 \begin{equation}
 \label{eq41}
-\mathcal{I}_s=\left\{i|s_i\in\text{Topk}(\{s_i|j\in\mathcal{I}\},N_s)\right\}
+\mathcal{I}_s=\left\{i|s_i\in\text{Topk}(\{s_i|i\in\mathcal{I}\},N_s)\right\}
 \end{equation}
 其中 $\text{Topk}(\mathcal{S},n)$ 表示从集合 $\mathcal{S}$ 中选出最大的 $n$ 个元素组成的集合，
 $s_i$表示亲和度表中分区配置$i$的亲和度。
@@ -212,7 +243,7 @@ $s_i$表示亲和度表中分区配置$i$的亲和度。
 因此使用强化学习中常用的Gumbel-Max技巧\cite{jang2016categorical}向\eqref{eq41}中添加了Gumbel噪声\cite{jang2016categorical}
 实现将亲和度作为概率采样$N_r$个随机分区配置$\mathcal{I}_r$：
 \begin{equation}
-\mathcal{I}_r=\left\{i|s_i+g_j\in\text{Topk}(\{s_i+g_j|j\in\mathcal{I}-\mathcal{I}_s\},N_r)\right\}
+\mathcal{I}_r=\left\{i|s_j+g_j\in\text{Topk}(\{s_j+g_j|j\in\mathcal{I}-\mathcal{I}_s\},N_r)\right\}
 \end{equation}
 其中 $\text{Topk}(\mathcal{S},n)$ 表示从集合 $\mathcal{S}$ 中选出最大的 $n$ 个元素组成的集合
 ，$g_j$表示从$Gumbel(0,1)$分布中获得的噪声样本。
@@ -221,6 +252,22 @@ $s_i$表示亲和度表中分区配置$i$的亲和度。
 \begin{equation}
 \mathcal{I}^*=\mathcal{I}_{s}\cup\mathcal{I}_r
 \end{equation}
+
+综上所述，MoP的伪代码如下：
+
+\begin{algorithm}[htbp]
+    \caption{基于混合专家模型的分区配置选择器(MoP)}
+    \KwIn{分区配置集$\mathcal{I}$，分区配置的亲和度表$S$。稳定分区配置数$N_s$，
+    随机分区配置数$N_r$。}
+    \KwOut{激活的分区配置集$\mathcal{I}^*$}
+    $\mathcal{I}_s \gets \mathit{Topk}(\mathcal{I},S,N_s)$;\hfill $//$稳定分区配置
+
+    $\mathcal{I}_r \gets \mathit{Topk}(\mathcal{I}-\mathcal{I}_s,S,N_r,Gumbel(0, 1))$;\hfill $//$随机分区配置
+    
+    $\mathcal{I}^* \gets \mathcal{I}_{s}\cup\mathcal{I}_r$\;
+    \Return $\mathcal{I}^*$
+\end{algorithm}
+
 接下来激活的分区配置与非分区配置一起作为激活的编码配置，
 通过可微编解码器对4\times4纹理块进行编解码。
 最后使用Gumbel配置选择器选择出最佳配置：

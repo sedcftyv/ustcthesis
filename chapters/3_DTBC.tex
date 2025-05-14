@@ -143,9 +143,9 @@ DBC模型的伪代码如下：
     \KwOut{经过可微DXT编解码的纹理$\mathbf{T}'\in \mathbb{R}^{w\times h\times c}$。}
     $\mathbf{T}' \gets \emptyset$ \;
     \For{each 4x4 block $\mathbf{B}$ in $\mathbf{T}$}{
-        $//$从编码配置集$\mathcal{I}$中遍历每种编码配置$i$
-
         $\mathbf{B}' \gets \emptyset$ \;
+        $//$从编码配置集$\mathcal{I}$中遍历每种编码配置$i$
+        
         \For{each $i$ in $\mathcal{I}$}{
         $\mathbf{B}'_i \gets Decoder(Encoder(\mathbf{B},i))$\;
         $\mathbf{B}' \gets \mathbf{B}'\cup \mathbf{B}'_i$\;
