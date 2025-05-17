@@ -307,36 +307,6 @@ DXT格式将纹理以颜色端点和权重的形式量化存储，
     \label{fig:MoE}
 \end{figure}
 
-之后Jordan等\cite{jordan1994hierarchical}
-提出了一种树结构的分层MoE架构，可以使用期望最大化算法以有监督方式进行训练。
-Tresp等\cite{tresp2001mixtures}提出了混合高斯过程(Mixtures of Gaussian Processes, MGP)模型，
-该模型对于映射的最佳带宽依赖于输入的应用非常有用。
-Rasmussen等\cite{rasmussen2001infinite}提出一种MoE的扩展，其中各个专家是高斯过程 (Gaussian Processes, GP) 回归模型。
-Aljundi等\cite{aljundi2017expert}提出了一种基于专家网络的终身学习模型，基于之前学到的知识，新任务/专家将被学习并按顺序添加到模型中。
-Garmash等\cite{garmash2016ensemble}描述和评估了在神经机器翻译模型中基于MoE架构执行集成预测的方法。
-Eigen等\cite{eigen2013learning}将专家混合扩展到堆叠模型，即专家深度混合，具有多组门控和专家。通过将每个输入与每一层的专家组合相关联，可以指数级地增加有效专家的数量，同时保持适度的模型大小。
-Shazeer等\cite{shazeer2017outrageously}提出了稀疏门控混合专家层从而克服MoE为GPU带来的条件计算（分支）问题，并使用可训练的门控网络选择专家的稀疏组合，表明MoE可以应用于语言建模和翻译领域。
-
-目前MoE架构已经广泛应用在Transformers\cite{vaswani2017attention}中。
-Fedus等\cite{fedus2022switch}提出了一种基于 MoE 的编码器-解码器 Transformer 架构，称为 Switch Transformer，它使用简化的门控机制使训练更加稳定，从而使 MoE 在语言建模领域中更加实用。
-Du等\cite{du2022glam}提出并开发了一系列名为 GLaM（通才语言模型）的语言模型，它使用稀疏激活的专家混合架构来扩展模型容量，与密集变体相比，大大降低了训练成本。
-Zoph等\cite{zoph2022st}深入研究了MoE模型的不稳定性及微调困难的问题，为稀疏模型的实用可靠训练提供了设计指南。
-Lepikhin等\cite{lepikhin2020gshard}提出了一个由一组轻量级注释 API 和 XLA 编译器扩展组成的模块GShard。 GShard允许通过自动分片将具有稀疏门控混合专家的多语言神经机器翻译 Transformer 模型扩展到超过 6000 亿个参数。
-% 自 MoE 架构提出以来，它已被广泛应用于多种机器学习模型中，包括支持向量机\cite{collobert2002parallel}、
-% 混合高斯过程模型\cite{tresp2001mixtures,rasmussen2001infinite}
-% 以及神经网络\cite{aljundi2017expert,garmash2016ensemble,eigen2013learning}。
-
-% 然而，MoE 架构在条件计算中需要频繁进行分支操作以决定激活哪些专家网络，这与 GPU 的高度并行计算架构并不匹配，
-% 导致计算效率难以提升，训练成本显著增加，从而限制了 MoE 架构在大规模网络中的应用。
-% 为了解决这一问题，Shazeer 等\cite{shazeer2017outrageously}为 MoE 架构的门控网络引入了 softmax 和 Noisy Top-K 方法，
-% 从而克服了MoE为GPU带来的条件计算（分支）问题，在模型容量上实现了超过 1000 倍的提升，
-% 并使用可训练的门控网络选择专家的稀疏组合，表明MoE可以应用于语言建模和翻译领域。
-
-% 目前，MoE 架构已广泛应用于 Transformers\cite{vaswani2017attention}中，
-% 例如 Switch Transformer\cite{fedus2022switch}、
-% GLaM\cite{du2022glam}、ST-MOE\cite{zoph2022st}
-% 和 GShard\cite{lepikhin2020gshard}等。
-
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=1\textwidth]{figures/DeepSeekMoE.png}
