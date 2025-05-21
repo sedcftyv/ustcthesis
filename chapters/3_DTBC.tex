@@ -89,7 +89,7 @@ BC7同时支持3通道与4通道纹理，共具有8种不同模式，前4种模�
 其中$w$、$h$、$c$分别表示纹理的宽度、高度、通道数。
 DXT格式编解码器的框架可以使用如下形式表示：
 \begin{equation}
-    \mathbf{T}'=\text{ConfigSelector}(\text{Decoder}(\text{Encoder}(\mathbf{T})))
+    \mathbf{T}'=\text{ConfigSelector}(\text{Decoder}(\text{Encoder}(\mathbf{T}))),
 \end{equation}
 其中Encoder表示编码器，Decoder表示解码器，ConfigSelector表示编码配置选择器。编码器首先将纹理分为4\times4大小的纹理块，
 然后对于每个纹理块，使用不同的编码配置进行编码，每个编码配置经过解码器解码得到对应的纹理，
@@ -178,12 +178,12 @@ DBC模型采用主成分分析法(Principal Component Analysis, PCA)计算
 $\mathbf{C}\in\mathbb{R}^{m\times n}$，其中 $m$ 表示该纹素组中的纹素个数，$n$ 表示每个纹素的通道数。
 中心化的颜色矩阵定义为$\mathbf{C}_{\text{center}}\in\mathbb{R}^{m\times n}$：
 \begin{equation}
-\mathbf{C}_{\text{center}}=\mathbf{C}-\mathbf{C}_{\text{mean}}
+\mathbf{C}_{\text{center}}=\mathbf{C}-\mathbf{C}_{\text{mean}},
 \end{equation}
 其中$\mathbf{C}_{\text{mean}}\in\mathbb{R}^{n}$表示这组纹素的颜色均值。
 然后对 $\mathbf{C}_{\text{center}}$ 进行奇异值分解(SVD)：
 \begin{equation}
-\mathbf{C}_{\text{center}}=\mathbf{U}\text{diag}(\mathbf{s})\mathbf{V}^T
+\mathbf{C}_{\text{center}}=\mathbf{U}\text{diag}(\mathbf{s})\mathbf{V}^T,
 \end{equation}
 其中$\mathbf{U}\in \mathbb{R}^{m \times m}$，
 $\text{diag}(\mathbf{s})\in\mathbb{R}^{m\times n}$，
@@ -191,20 +191,20 @@ $\mathbf{V}\in \mathbb{R}^{n\times n}$。
 选择 $\mathbf{V}$ 中最大奇异值对应的奇异向量 $\mathbf{v}\in \mathbb{R}^{n}$ 作为颜色主方向。
 然后对颜色主方向$\mathbf{v}$进行归一化：
 \begin{equation}
-    \mathbf{v}'=\frac{\mathbf{v}}{\|\mathbf{v}\|}
+    \mathbf{v}'=\frac{\mathbf{v}}{\|\mathbf{v}\|},
 \end{equation}
 其中$\mathbf{v}'$表示归一化后的颜色主方向，
 $\|\mathbf{v}\|$表示向量$\mathbf{v}$的模长。
 接着，将中心化的颜色矩阵 $\mathbf{C}_\text{center}$ 投影到归一化的颜色主方向 $\mathbf{v}'$ 上，
 得到这组纹素在颜色主方向$\mathbf{v}'$上的投影距离颜色均值$\mathbf{C}_{\text{mean}}$的偏移长度 $\mathbf{l}\in\mathbb{R}^{m}$：
 \begin{equation}
-\mathbf{l}=\mathbf{C}_{\text{center}}\cdot\mathbf{v}'
+\mathbf{l}=\mathbf{C}_{\text{center}}\cdot\mathbf{v}',
 \end{equation}
 取距离最远的两个投影点作为颜色端点
 $\mathbf{e}_0\in\mathbb{R}^n$ 和 $\mathbf{e}_1\in\mathbb{R}^n$：
 \begin{align}
-\mathbf{e}_0=\mathbf{C}_{\text{mean}}+\mathbf{l}_\text{min}\mathbf{v}\\
-\mathbf{e}_1=\mathbf{C}_{\text{mean}}+\mathbf{l}_\text{max}\mathbf{v}
+\mathbf{e}_0=\mathbf{C}_{\text{mean}}+\mathbf{l}_\text{min}\mathbf{v},\\
+\mathbf{e}_1=\mathbf{C}_{\text{mean}}+\mathbf{l}_\text{max}\mathbf{v},
 \end{align}
 其中$\mathbf{l}_\text{min}$与$\mathbf{l}_\text{max}$分别表示
 偏移长度$\mathbf{l}$的最小值与最大值。
@@ -212,8 +212,8 @@ $\mathbf{e}_0\in\mathbb{R}^n$ 和 $\mathbf{e}_1\in\mathbb{R}^n$：
 最后将纹素组中每个纹素的颜色投影到颜色端点$\mathbf{e}_0$和$\mathbf{e}_1$构成的线段上，
 得到每个纹素的权重$\mathbf{t}\in\mathbb{R}^m$：
 \begin{align}
-    \mathbf{v''}=\frac{\mathbf{e}_1-\mathbf{e}_0}{\|\mathbf{e}_1-\mathbf{e}_0\|}\\
-    \mathbf{t}=\frac{(\mathbf{C}-\mathbf{e}_0)\cdot\mathbf{v''}}{\|\mathbf{e}_1-\mathbf{e}_0\|}
+    \mathbf{v''}=\frac{\mathbf{e}_1-\mathbf{e}_0}{\|\mathbf{e}_1-\mathbf{e}_0\|},\\
+    \mathbf{t}=\frac{(\mathbf{C}-\mathbf{e}_0)\cdot\mathbf{v''}}{\|\mathbf{e}_1-\mathbf{e}_0\|},
 \end{align}
 其中$\mathbf{v''}$表示颜色端点$\mathbf{e}_0$和$\mathbf{e}_1$构成的向量，
 $\mathbf{C}$表示纹素组的颜色矩阵。
@@ -259,7 +259,7 @@ $\mathbf{C}$表示纹素组的颜色矩阵。
 
 解码器进行线性插值得到解压缩的纹素组 $\mathbf{C}'\in\mathbb{R}^{m\times n}$：
 \begin{equation}
-\mathbf{C}'=\mathbf{e}_0(1-\mathbf{t})+\mathbf{e}_1\mathbf{t}
+\mathbf{C}'=\mathbf{e}_0(1-\mathbf{t})+\mathbf{e}_1\mathbf{t}.
 \end{equation}
 
 解决了编码问题$P_{m,n}$后，DXT格式的编解码过程可以看作一系列
@@ -274,7 +274,7 @@ $P_{m_2,n}$问题。
 均匀量化方法进行量化。为了更加接近标准DXT格式编码器，
 DBC模型会在编码完成后对颜色端点与权重进行模拟量化：
 \begin{equation}\label{eqn-quantize}
-    Q(r)=\frac{\left \lfloor r \times (2^{b}-1) \right \rceil}{2^{b}-1}
+    Q(r)=\frac{\left \lfloor r \times (2^{b}-1) \right \rceil}{2^{b}-1},
 \end{equation}
 其中$r$表示量化前的0-1浮点值，$b$表示量化位数，$Q(r)$表示经过模拟量化的浮点值，$\lfloor \cdot \rceil$表示
 用于舍入的Round函数。
@@ -282,7 +282,7 @@ DBC模型会在编码完成后对颜色端点与权重进行模拟量化：
 采用神经网络量化领域常用的直通估计器\cite{bengio2013estimating}(Straight-Through Estimator, STE)
 使得梯度得以正常传播：
 \begin{equation}\label{eqn-7}
-    \nabla_{x} \left \lfloor x \right \rceil=1
+    \nabla_{x} \left \lfloor x \right \rceil=1.
 \end{equation}
 
 DXT格式的均匀量化过程要求量化前的浮点值范围在0-1之间，
@@ -290,10 +290,10 @@ DXT格式的均匀量化过程要求量化前的浮点值范围在0-1之间，
 因此通过最大最小缩放，在量化前将颜色端点与权重缩放到0-1之间，
 模拟量化后再恢复到之前的范围，以权重的缩放为例:
 \begin{equation}
-    \mathbf{t'}=\frac{\mathbf{t}-\mathbf{t}_\text{min}}{\mathbf{t}_\text{max}-\mathbf{t}_\text{min}}
+    \mathbf{t'}=\frac{\mathbf{t}-\mathbf{t}_\text{min}}{\mathbf{t}_\text{max}-\mathbf{t}_\text{min}},
 \end{equation}
 \begin{equation}
-    \mathbf{t''}=\mathbf{t'}(\mathbf{t}_\text{max}-\mathbf{t}_\text{min})+\mathbf{t}_\text{min}
+    \mathbf{t''}=\mathbf{t'}(\mathbf{t}_\text{max}-\mathbf{t}_\text{min})+\mathbf{t}_\text{min},
 \end{equation}
 其中$\mathbf{t}\in\mathbb{R}^m$表示纹理经过
 可微编码后某个编码问题$P_{m,n}$的权重，
@@ -319,13 +319,13 @@ BC6格式颜色端点的量化过程比较特殊，
 纹理块为 $\mathbf{B}'_i\in\mathbb{R}^{b\times n}$。
 定义编码配置$i$对应的编码误差 $L_i$ 为
 \begin{equation}
-L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
+L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2.
 \end{equation}
 
 配置选择器的功能是对每4\times4纹理块$\mathbf{B}$，在不同编码配置中选择最佳配置，
 即选择使得编码误差$L_i$最小的编码配置$i^*$：
 \begin{equation}
-    i^*=\mathop{\arg\min}\limits_{i} L_i
+    i^*=\mathop{\arg\min}\limits_{i} L_i.
 \end{equation}
 
 为了确定每个编码配置$i$对应的编码误差$L_i$，
@@ -335,21 +335,21 @@ L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
 这会产生显著的计算开销，下一章将针对这一问题进行改进。
 
 由于在计算编码误差之前，已经对每种编码配置都进行了可微编解码，配置选择器可以
-直接将使用了$i^*$进行编解码得到的$\mathbf{B}'_{i^*}$作为输出。
+直接将使用了$i^*$进行编解码得到的$\mathbf{B}'_{i^*}$作为输出：
 \begin{equation}
-    \mathbf{B}'_{i^*}=\mathop{\arg\min}\limits_{\mathbf{B}'_i} L_i
+    \mathbf{B}'_{i^*}=\mathop{\arg\min}\limits_{\mathbf{B}'_i} L_i,
 \end{equation}
 由于$\mathop{\arg\min}$是不可微的，因此使用one-hot加权混合代替$\mathop{\arg\min}$：
 \begin{equation}
-\mathbf{B}'_{i^*}=\sum_{i\in\mathcal{I}} w_i\mathbf{B}'_i
+\mathbf{B}'_{i^*}=\sum_{i\in\mathcal{I}} w_i\mathbf{B}'_i,
 \end{equation}
 其中 $w_i$ 是配置 $i$ 的组合系数。由于
 对于每个4\times4纹理块$\mathbf{B}$最终只能选择一种配置进行编码，
 因此 $w_i$ 必须是 one-hot 的：
 \begin{equation}
     w_i =\left\{\begin{matrix}
-        1,& i=\mathop{\arg\min}\limits_{i} L_i
-        \\0,& i\ne\mathop{\arg\min}\limits_{i} L_i
+        1,& i=\mathop{\arg\min}\limits_{i} L_i,
+        \\0,& i\ne\mathop{\arg\min}\limits_{i} L_i.
         \end{matrix}\right.
 \end{equation}
 
@@ -361,7 +361,7 @@ L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
 为了使用BC7格式存储神经纹理，需要对神经纹理的范围进行限制。
 为了更好的数值对称性，向神经压缩模型的损失函数中加入范围约束损失：
 \begin{equation}
-L_{clamp}(\mathbf{T})=\|\mathbf{T}-\text{clamp}(\mathbf{T},-1,1)\|_F^2
+L_{clamp}(\mathbf{T})=\|\mathbf{T}-\text{clamp}(\mathbf{T},-1,1)\|_F^2,
 \end{equation}
 其中$\mathbf{T}$表示优化过程中的神经纹理，$\text{clamp}$为钳位函数。
 优化结束后，将神经纹理从(-1,1)线性映射到(0,1)，即可以BC7格式压缩存储。
@@ -404,12 +404,12 @@ PSNR是图像和视频处理领域一种常用的客观质量评价指标。
 说明失真越小，图像质量越好。
 PSNR 的计算基于均方误差(Mean Squared Error, MSE)，其定义如下：
 \begin{equation}
-\text{MSE} = \frac{1}{MN} \sum_{i=0}^{M-1} \sum_{j=0}^{N-1} \left[ I(i,j) - K(i,j) \right]^2
+\text{MSE} = \frac{1}{MN} \sum_{i=0}^{M-1} \sum_{j=0}^{N-1} \left[ I(i,j) - K(i,j) \right]^2,
 \end{equation}
 其中$M$ 和 $N$ 分别为图像的宽度和高度，$I(i,j)$ 和 $K(i,j)$ 分别表示原始图像和经过处理后的图像在像素 $(i,j)$ 处的像素值。
 基于MSE，PSNR 的计算公式如下：
 \begin{equation}
-    \text{PSNR} = 10 \cdot \log_{10} \left( \frac{MAX^2}{\text{MSE}} \right)
+    \text{PSNR} = 10 \cdot \log_{10} \left( \frac{MAX^2}{\text{MSE}} \right),
 \end{equation}
 其中$MAX$ 表示像素的最大可能值。
 
@@ -419,16 +419,16 @@ SSIM\cite{wang2004image}是一种衡量图像质量的客观指标，旨在模�
 与PSNR不同，SSIM 不仅关注像素间的数值差异，还考虑了图像的结构信息，从而提供更符合人眼感知的质量评估。
 SSIM 通过亮度(Luminance)、对比度(Contrast)和结构(Structure)三个分量计算图像相似度，其数学定义如下：
 \begin{equation}
-\text{SSIM}(x, y) = l(x, y)^\alpha \cdot c(x, y)^\beta \cdot s(x, y)^\gamma
+\text{SSIM}(x, y) = l(x, y)^\alpha \cdot c(x, y)^\beta \cdot s(x, y)^\gamma,
 \end{equation}
 \begin{equation}
-l(x, y) = \frac{2\mu_x\mu_y + C_1}{\mu_x^2 + \mu_y^2 + C_1}
+l(x, y) = \frac{2\mu_x\mu_y + C_1}{\mu_x^2 + \mu_y^2 + C_1},
 \end{equation}
 \begin{equation}
-c(x, y) = \frac{2\sigma_x\sigma_y + C_2}{\sigma_x^2 + \sigma_y^2 + C_2}
+c(x, y) = \frac{2\sigma_x\sigma_y + C_2}{\sigma_x^2 + \sigma_y^2 + C_2},
 \end{equation}
 \begin{equation}
-s(x, y) = \frac{\sigma_{xy} + C_3}{\sigma_x \sigma_y + C_3}
+s(x, y) = \frac{\sigma_{xy} + C_3}{\sigma_x \sigma_y + C_3},
 \end{equation}
 其中$l(x, y)$ 为亮度比较函数，$c(x, y)$ 为对比度比较函数，
 $s(x, y)$ 为结构相似性函数，
@@ -448,7 +448,7 @@ FLIP计算过程结合了人眼视觉特性和局部特征检测，以评估图�
 并采用局部对比度分析确保对高频细节的评估更符合视觉系统。
 最终，FLIP 计算颜色误差 $\Delta E_c$ 和特征误差 $\Delta E_f$，并通过非线性组合：
 \begin{equation}
-    \Delta E = (\Delta E_c)^{1 - \Delta E_f}
+    \Delta E = (\Delta E_c)^{1 - \Delta E_f},
 \end{equation}
 获得最终的感知误差值。该计算方式确保了特征误差对颜色误差的影响，
 增强了对关键视觉区域（如边缘、纹理和亮度变化）的质量评估。
@@ -482,10 +482,10 @@ FLIP 的取值范围为 $[0,1]$，FLIP的值越小则图像的损失越小。
 神经压缩模型中使用的损失函数为原始纹理与重建纹理之间的均方误差，以及\ref{范围约束}中的
 范围约束损失:
 \begin{equation}
-    L_{exp}=\| I(i,j) - \hat{I}(i,j) \|^2_F
+    L_{exp}=\| I(i,j) - \hat{I}(i,j) \|^2_F,
 \end{equation}
 \begin{equation}
-    L_{total}=L_{exp}+\lambda L_{clamp}
+    L_{total}=L_{exp}+\lambda L_{clamp},
 \end{equation}
 其中$i$和$j$分别为纹理的像素坐标，$I$表示原始纹理，$\hat{I}$表示
 神经压缩模型重建的纹理，$\lambda$表示范围约束损失的权重，DBC6实验时固定为0，DBC7实验时固定为0.1。

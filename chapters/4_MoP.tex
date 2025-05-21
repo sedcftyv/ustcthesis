@@ -39,12 +39,12 @@ DBC7需要计算64种双分区+1种单分区+4种旋转\times3种不同量化方
 所有配置的集合为 $\mathcal{I}$，针对配置 $i\in\mathcal{I}$ 经过可微编解码后得到的压缩纹理块为 $\mathbf{B}'_i\in\mathbb{R}^{b\times n}$。
 定义编码配置$i$对应的编码误差 $L_i$ 为
 \begin{equation}
-L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
+L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2,
 \end{equation}
 对每4\times4纹理块$\mathbf{B}$，配置选择器选择使得编码误差$L_i$最小的编码配置$i^*$：
 \begin{equation}
     \label{4:argmin}
-    i^*=\mathop{\arg\min}\limits_{i} L_i
+    i^*=\mathop{\arg\min}\limits_{i} L_i,
 \end{equation}
 为了确定每种编码配置$i$对应的编码误差$L_i$，
 上一章中使用了穷举的方法，对每4\times4纹理块都会使用所有编码配置进行编码，
@@ -112,11 +112,11 @@ L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
 Gumbel-Max技巧提供了一种简单而有效的方法，从分类概率为$\pi$的
 类别分布中采样样本$z$：
 \begin{equation}
-z = \arg\max_i \left( \log\pi_i + g_i \right)
+z = \arg\max_i \left( \log\pi_i + g_i \right),
 \end{equation}
 其中$g_i$是从$Gumbel(0, 1)$分布中采样的噪声：
 \begin{equation}
-    g = -log(-log(u))
+    g = -log(-log(u)),
 \end{equation}
 其中$u$表示从均匀分布$Uniform(0, 1)$中采样的随机数，
 $g$表示采样得到的Gumbel噪声。
@@ -201,7 +201,7 @@ DeepSeekMoE\cite{dai2024deepseekmoe}中的
 而纹理编解码过程只需要选择编码误差最小的编码配置，因此可以使用编码误差的倒数作为对分区配置的亲和度，
 同时无需使用门控网络：
 \begin{equation}
-s_i=\frac{1}{L_i}
+s_i=\frac{1}{L_i},
 \end{equation}
 其中$s_i$表示分区配置$i$的亲和度，
 $L_i$表示使用分区配置$i$产生的编码误差。
@@ -214,7 +214,7 @@ $L_i$表示使用分区配置$i$产生的编码误差。
     s_i\leftarrow
     \begin{cases} 
         (1-\alpha)s_i+\alpha\frac{1}{\|B-B'_i\|_F^2}, & \text{if } i\in\mathcal{I}^*,\\
-    s_i, & \text{otherwise}.
+    s_i, & \text{otherwise},
     \end{cases}
 \end{equation}
 其中$B$表示可微编解码前的4\times4纹理块，$B'_i$表示$B$使用分区配置$i$可微编解码后的4\times4纹理块。
@@ -231,7 +231,7 @@ $\alpha$ 是滑动平均系数，固定为0.2，$\alpha$的作用是使得亲和
 选出亲和度最大的前$N_s$个分区配置作为稳定分区配置$\mathcal{I}_s$ ，即
 \begin{equation}
 \label{eq41}
-\mathcal{I}_s=\left\{i|s_i\in\text{Topk}(\{s_i|i\in\mathcal{I}\},N_s)\right\}
+\mathcal{I}_s=\left\{i|s_i\in\text{Topk}(\{s_i|i\in\mathcal{I}\},N_s)\right\},
 \end{equation}
 其中 $\text{Topk}(\mathcal{S},n)$ 表示从集合 $\mathcal{S}$ 中选出最大的 $n$ 个元素组成的集合，
 $s_i$表示亲和度表中分区配置$i$的亲和度。
@@ -243,14 +243,14 @@ $s_i$表示亲和度表中分区配置$i$的亲和度。
 因此使用强化学习中常用的Gumbel-Max技巧\cite{jang2016categorical}向\eqref{eq41}中添加了Gumbel噪声\cite{jang2016categorical}
 实现将亲和度作为概率采样$N_r$个随机分区配置$\mathcal{I}_r$：
 \begin{equation}
-\mathcal{I}_r=\left\{i|s_j+g_j\in\text{Topk}(\{s_j+g_j|j\in\mathcal{I}-\mathcal{I}_s\},N_r)\right\}
+\mathcal{I}_r=\left\{i|s_j+g_j\in\text{Topk}(\{s_j+g_j|j\in\mathcal{I}-\mathcal{I}_s\},N_r)\right\},
 \end{equation}
 其中 $\text{Topk}(\mathcal{S},n)$ 表示从集合 $\mathcal{S}$ 中选出最大的 $n$ 个元素组成的集合
 ，$g_j$表示从$Gumbel(0,1)$分布中获得的噪声样本。
 
 最终激活的分区配置集合$\mathcal{I}^*$为：
 \begin{equation}
-\mathcal{I}^*=\mathcal{I}_{s}\cup\mathcal{I}_r
+\mathcal{I}^*=\mathcal{I}_{s}\cup\mathcal{I}_r.
 \end{equation}
 
 综上所述，MoP的伪代码如下：
@@ -277,15 +277,15 @@ $s_i$表示亲和度表中分区配置$i$的亲和度。
 经过可微编解码后得到的纹理块为 $\mathbf{B}'_i\in\mathbb{R}^{b\times n}$，
 对应的编码误差为 $L_i$。
 \begin{equation}
-L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2
+L_i=\|\mathbf{B}-\mathbf{B}'_i\|_F^2,
 \end{equation}
 \begin{equation}
-\mathbf{B}'_{i^*}=\sum_{i\in\mathcal{I}} w_i\mathbf{B}'_i
+\mathbf{B}'_{i^*}=\sum_{i\in\mathcal{I}} w_i\mathbf{B}'_i,
 \end{equation}
 \begin{equation}
     w_i =\left\{\begin{matrix}
-        1,& i=\mathop{\arg\min}\limits_{i} (L_i+\tau*g_j)
-        \\0,& i\ne\mathop{\arg\min}\limits_{i} (L_i+\tau*g_j)
+        1,& i=\mathop{\arg\min}\limits_{i} (L_i+\tau*g_j),
+        \\0,& i\ne\mathop{\arg\min}\limits_{i} (L_i+\tau*g_j),
         \end{matrix}\right.
 \end{equation}
 其中 $w_i$ 是配置 $i$ 的组合系数，由于最终只选择使得$L_i+\tau*g_j$最小的配置，

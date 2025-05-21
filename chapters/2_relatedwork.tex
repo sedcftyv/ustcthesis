@@ -48,13 +48,13 @@ BC1对颜色端点与权重的量化方式为均匀量化，除BC6外，
 DXT格式中的其余6种格式都使用与BC1相同的均匀量化方式量化颜色端点与权重。
 其量化函数为：
 \begin{equation}\label{eqn-6}
-    Q(r)=\left \lfloor r \times (2^{b}-1) \right \rceil
+    Q(r)=\left \lfloor r \times (2^{b}-1) \right \rceil,
 \end{equation}
 其中$r$表示量化前的0-1浮点值（对于0-255整数范围的颜色值需要归一化到0-1之间），$b$表示量化位数，$Q(r)$表示量化后的整数值，$\lfloor \cdot \rceil$表示四舍五入函数。
 
 解量化函数为：
 \begin{equation}\label{eqn-6}
-    Q'(q)=\frac{q}{2^{b}-1}
+    Q'(q)=\frac{q}{2^{b}-1},
 \end{equation}
 其中$q$表示量化后的整数值，$b$表示量化位数，$Q'(q)$表示解量化得到的0-1浮点值，可以
 通过乘255恢复原始纹理。
@@ -173,7 +173,7 @@ BC6的量化过程比较特殊，权重部分的量化与DXT格式中的其他�
 但对于颜色端点使用了非均匀量化，首先会将原始的16位浮点值按照内存中实际存储的二进制值，
 解读为16位整数值，再进行均匀量化：
 \begin{equation}
-    Q(r)=\left \lfloor \frac{\text{F16toInt16}(r)}{\text{Int16\_Max}} \times (2^{b}-1) \right \rceil
+    Q(r)=\left \lfloor \frac{\text{F16toInt16}(r)}{\text{Int16\_Max}} \times (2^{b}-1) \right \rceil,
 \end{equation}
 其中$r$表示量化前的16位浮点值，F16toInt16(r)表示
 将16位浮点值$r$按照内存中实际存储的二进制值解读为16位整数值，
@@ -184,7 +184,7 @@ $\lfloor \cdot \rceil$表示四舍五入函数。
 解量化时首先对颜色端点解量化，然后将16位插值结果按照内存中实际存储的二进制值解读为16位浮点值，
 解量化函数为：
 \begin{equation}\label{eqn-6}
-    Q'(q)=\text{Int16toF16}(\frac{q}{2^{b}-1}*\text{Int16\_Max})
+    Q'(q)=\text{Int16toF16}(\frac{q}{2^{b}-1}*\text{Int16\_Max}),
 \end{equation}
 其中$q$表示量化后的整数值，$b$表示量化位数，Int16\_Max表示Int16所能表示的最大值，
 Int16toF16表示
@@ -361,14 +361,14 @@ BCf\cite{weinreich2024real}的神经压缩框架如图\ref{fig:BCf}所示，其�
 
 为了压缩存储预计算的光照数据，MBD 方法将光照数据在空间域分解为一系列基向量$b$与系数$c$，重建函数 $\hat{f}:R^3\to R^D$ 如下：
 \begin{equation}
-\hat f(x)=\sum_{l}^L c_{l} (x)b_{l}(x)
+\hat f(x)=\sum_{l}^L c_{l} (x)b_{l}(x),
 \end{equation}
 其中 $\hat{f}(x)$ 表示在位置 $x$ 处的重建光照值，$L$ 表示 MBD 的秩，$c_l(x)$ 和 $b_l(x)$ 表示第 $l$ 个系数和基向量，它们的具体表达式如下：
 \begin{equation}
-c_{l}(x)=\sum_{m}\phi_{m} (x)c_{m,l}
+c_{l}(x)=\sum_{m}\phi_{m} (x)c_{m,l},
 \end{equation}
 \begin{equation}
-b_{l}(x)=\sum_{n}\psi_{n} (x)B_{n,l}
+b_{l}(x)=\sum_{n}\psi_{n} (x)B_{n,l},
 \end{equation}
 其中 $\phi_{m}: R^{3} \rightarrow R$与$\psi_{n}: R^{3} \rightarrow R$分别表示系数与基向量的核函数，例如三线性插值。 
 $c_{m,l}$表示第 $l$ 在核函数 $\phi_m$ 上的系数，$B_{n,l}$ 表示第 $l$ 个在核函数 $\psi_n$ 上的基向量。
